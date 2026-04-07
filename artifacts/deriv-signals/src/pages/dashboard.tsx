@@ -1,13 +1,14 @@
 import { useGetSignals, useGetSettings } from "@workspace/api-client-react";
 import { AppLayout } from "@/components/layout/app-layout";
-import { Activity, TrendingUp, Zap, Target, Clock, Radio, Brain } from "lucide-react";
+import { Activity, Zap, Target, Clock, Brain } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis } from "recharts";
 import { SignalCard } from "@/components/signals/signal-card";
 import { useLiveSignals } from "@/hooks/use-live-signals";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { cn, getSignalColorInfo } from "@/lib/utils";
-import { format, formatDistanceToNow } from "date-fns";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { motion } from "framer-motion";
+import { DerivMarketPulse } from "@/components/digit-circles";
 
 const mockChartData = Array.from({ length: 24 }).map((_, i) => ({
   time: `${i}h`,
@@ -137,50 +138,6 @@ function StatCard({ label, value, sub, icon: Icon, accentColor, accentGradient }
   );
 }
 
-/* ── Market Status Grid ────────────────────────────────────────── */
-function MarketStatusGrid({ markets }: { markets: StatusData["markets"] }) {
-  return (
-    <div>
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: "linear-gradient(135deg,rgba(14,165,233,0.12),rgba(255,79,163,0.12))", border: "1px solid rgba(14,165,233,0.20)" }}>
-          <Radio className="w-4 h-4 text-sky-500 animate-live-dot" />
-        </div>
-        <h2 className="text-xl font-display font-bold text-slate-800">Market Pulse</h2>
-        <span className="text-xs text-slate-400 ml-1">Last signal per index</span>
-        <div className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold text-sky-600 px-2.5 py-1 rounded-full" style={{ background: "rgba(14,165,233,0.08)", border: "1px solid rgba(14,165,233,0.20)" }}>
-          <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-live-dot" />
-          {markets.length} Active
-        </div>
-      </div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {markets.map((m) => {
-          const ci = m.last ? getSignalColorInfo(m.last.signalType) : null;
-          return (
-            <motion.div key={m.symbol} whileHover={{ y: -2 }} transition={{ duration: 0.15 }}
-              className={cn("rounded-2xl p-3.5 border transition-all duration-300 cursor-default", ci ? ci.border : "border-slate-200")}
-              style={{ background: ci ? `${ci.hex}08` : "rgba(255,255,255,0.04)", backdropFilter: "blur(12px)", boxShadow: ci ? `0 2px 16px ${ci.hex}18` : "none" }}>
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-mono text-[11px] text-slate-400 font-semibold">{m.symbol}</span>
-                {m.last && ci && (
-                  <span className={cn("text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border", ci.bg, ci.border, ci.color)}>
-                    {m.last.signalType}
-                  </span>
-                )}
-              </div>
-              <div className="font-display font-bold text-xs text-slate-700 truncate mb-2">
-                {m.label.replace(" (1s)", "")}
-              </div>
-              {m.last
-                ? <div className="text-[10px] text-slate-400">{formatDistanceToNow(new Date(m.last.createdAt), { addSuffix: true })}</div>
-                : <div className="text-[10px] text-slate-300 italic">No signal yet</div>
-              }
-            </motion.div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 /* ── Chart ─────────────────────────────────────────────────────── */
 function SignalActivityChart() {
@@ -294,8 +251,8 @@ export function Dashboard() {
         {/* ── Chart ── */}
         <SignalActivityChart />
 
-        {/* ── Market Pulse ── */}
-        {status?.markets && <MarketStatusGrid markets={status.markets} />}
+        {/* ── Market Pulse: Digit Circles ── */}
+        <DerivMarketPulse />
 
         {/* ── Recent Signals ── */}
         <div>
