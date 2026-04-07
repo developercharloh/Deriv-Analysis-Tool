@@ -439,6 +439,41 @@ function toConf(score: number): Confidence {
   return score >= 80 ? "HIGH" : score >= 65 ? "MEDIUM" : "LOW";
 }
 
+// ─── PRIMARY CONDITION: DOMINANT DIGIT POSITIONING ───────────────────────────
+// THE first gate evaluated for every OVER/UNDER signal.
+// No signal is generated unless BOTH the most-appearing digit (rank 1, green)
+// AND the second-most-appearing digit (rank 2, blue) are positioned well clear
+// of the predicted digit.
+//
+//   OVER  barrier b → rank-1 and rank-2 must each be ≥ b + 2
+//     e.g. OVER 2 → both top digits must be in {4,5,6,7,8,9}
+//     e.g. OVER 4 → both top digits must be in {6,7,8,9}
+//
+//   UNDER barrier b → rank-1 and rank-2 must each be ≤ b - 2
+//     e.g. UNDER 5 → both top digits must be in {0,1,2,3}
+//     e.g. UNDER 7 → both top digits must be in {0,1,2,3,4,5}
+//
+// Returns false (block the signal) if either condition fails.
+function checkDominantDigitPosition(
+  freqs: number[],              // 10-element pct array (values 0–100, sum ≈ 100)
+  type: "OVER" | "UNDER",
+  barrier: number,
+): boolean {
+  // Sort digits by descending frequency to find ranks 1 and 2
+  const ranked = Array.from({ length: 10 }, (_, d) => d)
+    .sort((a, b) => freqs[b] - freqs[a]);
+  const rank1 = ranked[0]; // most appearing (green)
+  const rank2 = ranked[1]; // second most appearing (blue)
+
+  if (type === "OVER") {
+    // Both dominant digits must sit at least 2 places ABOVE the barrier
+    return rank1 >= barrier + 2 && rank2 >= barrier + 2;
+  } else {
+    // Both dominant digits must sit at least 2 places BELOW the barrier
+    return rank1 <= barrier - 2 && rank2 <= barrier - 2;
+  }
+}
+
 // ─── LOSING-SIDE DIGIT GUARD ─────────────────────────────────────────────────
 // Every digit on the LOSING side of an OVER/UNDER contract must have a
 // frequency strictly below `threshold` (default 10.2 %) in the 1 000-tick
