@@ -47,18 +47,22 @@ function getDigitTag(d: number, signalType: SignalTypeId): { label: string; colo
 
 /* ─────────────────────────────────────────────────────────────────
    Ranking-based colour system
-   rank 1 = most appearing  → green
-   rank 2                   → blue
-   rank 9                   → yellow (2nd least)
-   rank 10 = least          → red
-   others                   → neutral slate
+   rank 1  = most appearing  → green  (fully filled)
+   rank 2                    → blue   (fully filled)
+   rank 9                    → yellow (fully filled)
+   rank 10 = least           → red    (fully filled)
+   others                    → violet (semi — visible but not highlighted)
 ───────────────────────────────────────────────────────────────── */
 function getRankColor(rank: number): string {
   if (rank === 1)  return "#10b981"; // green  — most
   if (rank === 2)  return "#0ea5e9"; // blue   — 2nd most
   if (rank === 10) return "#ef4444"; // red    — least
   if (rank === 9)  return "#eab308"; // yellow — 2nd least
-  return "#64748b";                  // slate  — others
+  return "#8b5cf6";                  // violet — mid range
+}
+
+function isHighlightedRank(rank: number): boolean {
+  return rank === 1 || rank === 2 || rank === 9 || rank === 10;
 }
 
 function computeRanks(distribution: number[]): Record<number, number> {
@@ -223,18 +227,20 @@ function StyledSelect({ value, onChange, options, accentColor = "#0ea5e9" }: {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   DigitCircle  — uses rank-based color, shows ticker arrow when active
+   DigitCircle  — rank-based color, fully filled for top/bottom 2 ranks,
+                  red ticker arrow when live digit matches
 ───────────────────────────────────────────────────────────────── */
-function DigitCircle({ digit, pct, isActive, rankColor, signalType }: {
+function DigitCircle({ digit, pct, isActive, rank, rankColor, signalType }: {
   digit: number; pct: number; isActive: boolean;
-  rankColor: string; signalType: SignalTypeId;
+  rank: number; rankColor: string; signalType: SignalTypeId;
 }) {
   const tag = getDigitTag(digit, signalType);
+  const highlighted = isHighlightedRank(rank);
 
   return (
     <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
 
-      {/* Ticker arrow — points down at the active circle, fades when inactive */}
+      {/* Ticker arrow — always red, springs to the live digit */}
       <AnimatePresence mode="wait">
         {isActive ? (
           <motion.div
@@ -244,7 +250,7 @@ function DigitCircle({ digit, pct, isActive, rankColor, signalType }: {
             exit={{ opacity: 0, scale: 0.6 }}
             transition={{ type: "spring", stiffness: 500, damping: 22 }}
             className="text-[12px] font-black leading-none"
-            style={{ color: rankColor, filter: `drop-shadow(0 0 4px ${rankColor}cc)` }}
+            style={{ color: "#ef4444", filter: "drop-shadow(0 0 5px #ef444490)" }}
           >
             ▼
           </motion.div>
@@ -265,20 +271,20 @@ function DigitCircle({ digit, pct, isActive, rankColor, signalType }: {
         <span className="text-[8px] text-transparent select-none">M</span>
       )}
 
-      {/* Circle */}
+      {/* Circle — highlighted ranks always fully solid; others semi */}
       <motion.div
         animate={isActive
-          ? { scale: [1, 1.18, 1], boxShadow: [`0 0 0px ${rankColor}00`, `0 0 20px ${rankColor}bb`, `0 0 0px ${rankColor}00`] }
+          ? { scale: [1, 1.18, 1], boxShadow: [`0 0 0px ${rankColor}00`, `0 0 22px ${rankColor}cc`, `0 0 0px ${rankColor}00`] }
           : {}}
         transition={{ duration: 0.5 }}
         className="relative flex items-center justify-center rounded-full font-mono font-black text-sm select-none"
         style={{
           width: 44, height: 44,
-          background: isActive ? rankColor : `${rankColor}20`,
-          border: `2px solid ${isActive ? rankColor : rankColor + "55"}`,
-          color: isActive ? "#fff" : rankColor,
-          boxShadow: isActive ? `0 0 16px ${rankColor}90` : "none",
-          transition: "background 0.3s, color 0.3s, border-color 0.3s",
+          background: highlighted ? rankColor : `${rankColor}28`,
+          border: `2px solid ${rankColor}`,
+          color: highlighted ? "#fff" : rankColor,
+          boxShadow: isActive ? `0 0 18px ${rankColor}` : highlighted ? `0 0 8px ${rankColor}60` : "none",
+          transition: "background 0.3s, color 0.3s, box-shadow 0.3s",
         }}
       >
         {digit}
@@ -319,16 +325,20 @@ function DigitRow({ digits, distribution, liveDigit, rankMap, signalType }: {
 }) {
   return (
     <div className="flex gap-2">
-      {digits.map(d => (
-        <DigitCircle
-          key={d}
-          digit={d}
-          pct={distribution[d] ?? 0}
-          isActive={liveDigit === d}
-          rankColor={getRankColor(rankMap[d] ?? 5)}
-          signalType={signalType}
-        />
-      ))}
+      {digits.map(d => {
+        const rank = rankMap[d] ?? 5;
+        return (
+          <DigitCircle
+            key={d}
+            digit={d}
+            pct={distribution[d] ?? 0}
+            isActive={liveDigit === d}
+            rank={rank}
+            rankColor={getRankColor(rank)}
+            signalType={signalType}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -428,14 +438,20 @@ function RankLegend() {
   return (
     <div className="flex items-center gap-3 flex-wrap text-[9px] font-semibold uppercase tracking-wide text-slate-400">
       {[
-        { c: "#10b981", l: "Most appearing"  },
-        { c: "#0ea5e9", l: "2nd most"        },
-        { c: "#64748b", l: "Mid range"       },
-        { c: "#eab308", l: "2nd least"       },
-        { c: "#ef4444", l: "Least appearing" },
-      ].map(({ c, l }) => (
+        { c: "#10b981", l: "Most appearing",  solid: true  },
+        { c: "#0ea5e9", l: "2nd most",        solid: true  },
+        { c: "#8b5cf6", l: "Mid range",       solid: false },
+        { c: "#eab308", l: "2nd least",       solid: true  },
+        { c: "#ef4444", l: "Least appearing", solid: true  },
+      ].map(({ c, l, solid }) => (
         <div key={l} className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full" style={{ background: c }} />{l}
+          <span className="w-2.5 h-2.5 rounded-full border"
+            style={{
+              background: solid ? c : `${c}28`,
+              borderColor: c,
+            }}
+          />
+          {l}
         </div>
       ))}
     </div>
