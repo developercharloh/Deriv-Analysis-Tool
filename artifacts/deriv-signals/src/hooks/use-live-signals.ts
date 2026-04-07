@@ -17,24 +17,24 @@ function isActive(signal: Signal): boolean {
 
 export function useLiveSignals(initialSignals: Signal[] = []) {
   const [signals, setSignals] = useState<Signal[]>(() =>
-    initialSignals.filter(s => !isExpired(s))
+    initialSignals.filter(isActive)
   );
   const [isConnected, setIsConnected] = useState(false);
   const initialized = useRef(false);
 
-  // Sync with initial data once (filtering already-expired entries)
+  // Sync with initial data once (filtering already-expired / cancelled entries)
   useEffect(() => {
     if (!initialized.current && initialSignals.length > 0) {
-      setSignals(initialSignals.filter(s => !isExpired(s)));
+      setSignals(initialSignals.filter(isActive));
       initialized.current = true;
     }
   }, [initialSignals]);
 
-  // Periodic cleanup: every 15 s remove any signal that has now expired
+  // Periodic cleanup: every 15 s remove any signal that has now expired or been cancelled
   useEffect(() => {
     const id = setInterval(() => {
       setSignals(prev => {
-        const next = prev.filter(s => !isExpired(s));
+        const next = prev.filter(isActive);
         return next.length === prev.length ? prev : next;
       });
     }, 15_000);
