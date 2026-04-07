@@ -987,24 +987,31 @@ export function analyzeTickAndGenerateSignals(
     const freqs1k   = digitFreqs(state.ticks, 1000);
     const overEntry = findOptimalOverBarrier(freqs1k);
     if (overEntry !== null) {
-      const wins    = windowConfluence(state.ticks, "OVER");
-      if (wins >= 1) {
-        // Losing-side guard: every digit on the losing side (0 … barrier)
-        // must be individually below 10 % — no hot losing digit allowed.
-        const losingDigitsOk = losingDigitsBelowThreshold(freqs1k, "OVER", overEntry.barrier);
-        const score     = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: rsi >= 50 ? 6 : 2, entropy, anomaly, drift });
-        const conf      = toConf(score);
-        const profitSim = simulateSignalProfitability(state.ticks, "OVER", { barrier: overEntry.barrier });
-        if (conf !== "LOW" && losingDigitsOk && profitSim.valid) {
-          candidates.push({
-            signalType: "OVER", confidence: conf, confidenceScore: Math.round(score),
-            grade: grade(score), digit, price: tick.price, symbol: tick.symbol, market,
-            entryDigit: overEntry.barrier, predictionDigit: overEntry.barrier, digitFrequencies: freqs1k,
-            rsi: Math.round(rsi), adx: Math.round(adx), trend: "BULLISH",
-            regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
-            tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
-            explanation: `OVER ${overEntry.barrier} | Win digits: ${overEntry.winDigits.join(",")} | WinProb ${(overEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}%`,
-          });
+      // ── PRIMARY CONDITION (checked first — blocks everything else) ──────
+      // Both rank-1 (green) and rank-2 (blue) dominant digits must be at
+      // least 2 digits ABOVE the barrier.  e.g. OVER 2 → both must be ≥ 4.
+      // If this fails no further analysis is performed and no signal fires.
+      const dominantOk = checkDominantDigitPosition(freqs1k, "OVER", overEntry.barrier);
+      if (dominantOk) {
+        const wins    = windowConfluence(state.ticks, "OVER");
+        if (wins >= 1) {
+          // Losing-side guard: every digit on the losing side (0 … barrier)
+          // must be individually below 10 % — no hot losing digit allowed.
+          const losingDigitsOk = losingDigitsBelowThreshold(freqs1k, "OVER", overEntry.barrier);
+          const score     = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: rsi >= 50 ? 6 : 2, entropy, anomaly, drift });
+          const conf      = toConf(score);
+          const profitSim = simulateSignalProfitability(state.ticks, "OVER", { barrier: overEntry.barrier });
+          if (conf !== "LOW" && losingDigitsOk && profitSim.valid) {
+            candidates.push({
+              signalType: "OVER", confidence: conf, confidenceScore: Math.round(score),
+              grade: grade(score), digit, price: tick.price, symbol: tick.symbol, market,
+              entryDigit: overEntry.barrier, predictionDigit: overEntry.barrier, digitFrequencies: freqs1k,
+              rsi: Math.round(rsi), adx: Math.round(adx), trend: "BULLISH",
+              regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
+              tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
+              explanation: `OVER ${overEntry.barrier} | Win digits: ${overEntry.winDigits.join(",")} | WinProb ${(overEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}%`,
+            });
+          }
         }
       }
     }
@@ -1016,24 +1023,31 @@ export function analyzeTickAndGenerateSignals(
     const freqs1k    = digitFreqs(state.ticks, 1000);
     const underEntry = findOptimalUnderBarrier(freqs1k);
     if (underEntry !== null) {
-      const wins    = windowConfluence(state.ticks, "UNDER");
-      if (wins >= 1) {
-        // Losing-side guard: every digit on the losing side (barrier … 9)
-        // must be individually below 10 % — no hot losing digit allowed.
-        const losingDigitsOk = losingDigitsBelowThreshold(freqs1k, "UNDER", underEntry.barrier);
-        const score     = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: rsi <= 50 ? 6 : 2, entropy, anomaly, drift });
-        const conf      = toConf(score);
-        const profitSim = simulateSignalProfitability(state.ticks, "UNDER", { barrier: underEntry.barrier });
-        if (conf !== "LOW" && losingDigitsOk && profitSim.valid) {
-          candidates.push({
-            signalType: "UNDER", confidence: conf, confidenceScore: Math.round(score),
-            grade: grade(score), digit, price: tick.price, symbol: tick.symbol, market,
-            entryDigit: underEntry.barrier, predictionDigit: underEntry.barrier, digitFrequencies: freqs1k,
-            rsi: Math.round(rsi), adx: Math.round(adx), trend: "BEARISH",
-            regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
-            tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
-            explanation: `UNDER ${underEntry.barrier} | Win digits: ${underEntry.winDigits.join(",")} | WinProb ${(underEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}%`,
-          });
+      // ── PRIMARY CONDITION (checked first — blocks everything else) ──────
+      // Both rank-1 (green) and rank-2 (blue) dominant digits must be at
+      // least 2 digits BELOW the barrier.  e.g. UNDER 5 → both must be ≤ 3.
+      // If this fails no further analysis is performed and no signal fires.
+      const dominantOk = checkDominantDigitPosition(freqs1k, "UNDER", underEntry.barrier);
+      if (dominantOk) {
+        const wins    = windowConfluence(state.ticks, "UNDER");
+        if (wins >= 1) {
+          // Losing-side guard: every digit on the losing side (barrier … 9)
+          // must be individually below 10 % — no hot losing digit allowed.
+          const losingDigitsOk = losingDigitsBelowThreshold(freqs1k, "UNDER", underEntry.barrier);
+          const score     = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: rsi <= 50 ? 6 : 2, entropy, anomaly, drift });
+          const conf      = toConf(score);
+          const profitSim = simulateSignalProfitability(state.ticks, "UNDER", { barrier: underEntry.barrier });
+          if (conf !== "LOW" && losingDigitsOk && profitSim.valid) {
+            candidates.push({
+              signalType: "UNDER", confidence: conf, confidenceScore: Math.round(score),
+              grade: grade(score), digit, price: tick.price, symbol: tick.symbol, market,
+              entryDigit: underEntry.barrier, predictionDigit: underEntry.barrier, digitFrequencies: freqs1k,
+              rsi: Math.round(rsi), adx: Math.round(adx), trend: "BEARISH",
+              regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
+              tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
+              explanation: `UNDER ${underEntry.barrier} | Win digits: ${underEntry.winDigits.join(",")} | WinProb ${(underEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}%`,
+            });
+          }
         }
       }
     }
@@ -1387,6 +1401,10 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
       const losingOkOver  = overBarrier  ? losingDigitsBelowThreshold(freqs1k, "OVER",  overBarrier.barrier)  : false;
       const losingOkUnder = underBarrier ? losingDigitsBelowThreshold(freqs1k, "UNDER", underBarrier.barrier) : false;
 
+      // Primary dominant-positioning guards (rank-1 & rank-2 must be 2+ digits from barrier)
+      const dominantOkOver  = overBarrier  ? checkDominantDigitPosition(freqs1k, "OVER",  overBarrier.barrier)  : false;
+      const dominantOkUnder = underBarrier ? checkDominantDigitPosition(freqs1k, "UNDER", underBarrier.barrier) : false;
+
       // Cooldown helper
       const cdSecs = (type: SignalType): number => {
         const last = state.lastSignalTimes[type];
@@ -1403,6 +1421,7 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
 
         let minTicks = 50, ensmOk = false, ensmScore = 0;
         let barFound: boolean | null = null, loseOk: boolean | null = null;
+        let dominantPosOk: boolean | null = null;
         let strOk: boolean | null = null, recOk: boolean | null = null;
         let streakOk: boolean | null = null, streakN: number | null = null;
         let wRequired = 1;
@@ -1410,9 +1429,11 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         if (type === "OVER") {
           ensmOk = ensemble.overScore > 0.50; ensmScore = ensemble.overScore;
           barFound = overBarrier !== null; loseOk = losingOkOver;
+          dominantPosOk = dominantOkOver;
         } else if (type === "UNDER") {
           ensmOk = ensemble.underScore > 0.50; ensmScore = ensemble.underScore;
           barFound = underBarrier !== null; loseOk = losingOkUnder;
+          dominantPosOk = dominantOkUnder;
         } else if (type === "RISE") {
           ensmOk = ensemble.riseScore > 0.52; ensmScore = ensemble.riseScore;
           streakOk = downStreak >= 2; streakN = downStreak;
