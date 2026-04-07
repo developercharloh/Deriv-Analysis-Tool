@@ -474,6 +474,52 @@ function checkDominantDigitPosition(
   }
 }
 
+// ─── COMPULSORY CONDITION 2: LEAST-APPEARING DIGIT POSITION ──────────────────
+// The red bar (rank-10 / least-appearing digit) must also sit well inside the
+// WINNING side — at least 2 digits from the barrier — confirming the weakest
+// digit in the market is still contributing to the winning outcome.
+//
+//   OVER  barrier b → least-appearing digit must be ≥ b + 2
+//     e.g. OVER 1 → red bar must be in {3,4,5,6,7,8,9}  (above digit 2)
+//     e.g. OVER 2 → red bar must be in {4,5,6,7,8,9}
+//
+//   UNDER barrier b → least-appearing digit must be ≤ b - 2
+//     e.g. UNDER 5 → red bar must be in {0,1,2,3}
+//     e.g. UNDER 7 → red bar must be in {0,1,2,3,4,5}
+//
+// Returns false (block the signal) if the condition fails.
+function checkLeastAppearingPosition(
+  freqs: number[],
+  type: "OVER" | "UNDER",
+  barrier: number,
+): boolean {
+  const ranked = Array.from({ length: 10 }, (_, d) => d)
+    .sort((a, b) => freqs[b] - freqs[a]);
+  const leastAppearing = ranked[9]; // rank 10 — red bar
+
+  if (type === "OVER") {
+    return leastAppearing >= barrier + 2;
+  } else {
+    return leastAppearing <= barrier - 2;
+  }
+}
+
+// ─── COMPULSORY CONDITION 3: NO TIED FREQUENCIES ─────────────────────────────
+// All 10 digit frequencies must be distinct (no two digits share the same
+// percentage, to 1 decimal place).  Ties indicate a flat / random market
+// where there is no reliable skew — no signal should be generated in this state.
+function checkNoTiedFrequencies(
+  freqs: number[], // 10-element pct array (values rounded to 1 dp, sum ≈ 100)
+): boolean {
+  const rounded = freqs.map(f => Math.round(f * 10)); // compare at 0.1% precision
+  const seen = new Set<number>();
+  for (const v of rounded) {
+    if (seen.has(v)) return false;
+    seen.add(v);
+  }
+  return true;
+}
+
 // ─── LOSING-SIDE DIGIT GUARD ─────────────────────────────────────────────────
 // Every digit on the LOSING side of an OVER/UNDER contract must have a
 // frequency strictly below `threshold` (default 10.2 %) in the 1 000-tick
@@ -987,12 +1033,17 @@ export function analyzeTickAndGenerateSignals(
     const freqs1k   = digitFreqs(state.ticks, 1000);
     const overEntry = findOptimalOverBarrier(freqs1k);
     if (overEntry !== null) {
-      // ── PRIMARY CONDITION (checked first — blocks everything else) ──────
-      // Both rank-1 (green) and rank-2 (blue) dominant digits must be at
-      // least 2 digits ABOVE the barrier.  e.g. OVER 2 → both must be ≥ 4.
-      // If this fails no further analysis is performed and no signal fires.
+      // ── COMPULSORY CONDITION 1: dominant digit positioning (checked first) ─
+      // Both rank-1 (green) and rank-2 (blue) must be ≥ barrier+2.
       const dominantOk = checkDominantDigitPosition(freqs1k, "OVER", overEntry.barrier);
-      if (dominantOk) {
+      // ── COMPULSORY CONDITION 2: least-appearing digit positioning ──────────
+      // Red bar (rank-10) must also be ≥ barrier+2 (well inside winning side).
+      const leastPosOk = checkLeastAppearingPosition(freqs1k, "OVER", overEntry.barrier);
+      // ── COMPULSORY CONDITION 3: no tied digit frequencies ──────────────────
+      // Market must have a distinct distribution — no two digits share the same %.
+      const noTiesOk   = checkNoTiedFrequencies(freqs1k);
+
+      if (dominantOk && leastPosOk && noTiesOk) {
         const wins    = windowConfluence(state.ticks, "OVER");
         if (wins >= 1) {
           // Losing-side guard: every digit on the losing side (0 … barrier)
