@@ -224,6 +224,31 @@ export function Settings() {
     } finally { setWaResolving(false); }
   };
 
+  const handleResolveChannel = async () => {
+    if (!waChannelLink.trim()) return;
+    setWaResolvingChannel(true);
+    try {
+      const res = await fetch("/api/whatsapp/resolve-channel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inviteLink: waChannelLink.trim() }),
+      });
+      const data = await res.json();
+      if (data.success && data.jid) {
+        const existing = waTargetJids.split(",").map(s => s.trim()).filter(Boolean);
+        if (!existing.includes(data.jid)) {
+          setWaTargetJids([...existing, data.jid].join(", "));
+        }
+        setWaChannelLink("");
+        toast({ title: "Channel Added", description: `JID: ${data.jid}` });
+      } else {
+        toast({ title: "Failed", description: data.message, variant: "destructive" });
+      }
+    } catch {
+      toast({ title: "Error", description: "Failed to resolve channel link.", variant: "destructive" });
+    } finally { setWaResolvingChannel(false); }
+  };
+
   const { control, handleSubmit, reset, watch } = useForm({
     defaultValues: {
       telegramBotToken: "",
