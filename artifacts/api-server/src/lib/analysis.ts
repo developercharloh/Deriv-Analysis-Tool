@@ -1637,6 +1637,34 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
 }
 
 /** Returns per-symbol tick count and current ensemble state — for diagnostics. */
+/**
+ * Returns current 1000-tick digit frequency array (0–9) for a symbol.
+ * Returns null if insufficient tick history.
+ */
+export function getCurrentDigitFreqs(symbol: string): number[] | null {
+  const state = symbolStates.get(symbol);
+  if (!state || state.ticks.length < 50) return null;
+  return digitFreqs(state.ticks, 1000);
+}
+
+/**
+ * Returns true if ALL losing-side digits for an OVER/UNDER signal are still
+ * below the 10.2% threshold — i.e. the signal conditions are still valid.
+ */
+export function isOverUnderConditionStillValid(
+  symbol: string,
+  signalType: "OVER" | "UNDER",
+  barrier: number,
+): boolean {
+  const freqs = getCurrentDigitFreqs(symbol);
+  if (!freqs) return true; // can't check yet — don't cancel prematurely
+  const losing =
+    signalType === "OVER"
+      ? Array.from({ length: barrier + 1 }, (_, i) => i)
+      : Array.from({ length: 10 - barrier }, (_, i) => barrier + i);
+  return losing.every(d => freqs[d] < 10.2);
+}
+
 export function getAnalysisStats(): Record<string, { tickCount: number; matchesProb?: number; matchesEntry?: number; differsEntry?: number; ensembleScore?: number }> {
   const result: Record<string, { tickCount: number; matchesProb?: number; matchesEntry?: number; differsEntry?: number; ensembleScore?: number }> = {};
   for (const [sym, state] of symbolStates) {
