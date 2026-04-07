@@ -119,4 +119,101 @@ router.post("/whatsapp/settings", async (req: Request, res: Response) => {
   }
 });
 
+// ─── Meta WhatsApp Cloud API ──────────────────────────────────────────────────
+
+/** POST /api/whatsapp/cloud/settings — save Cloud API credentials */
+router.post("/whatsapp/cloud/settings", async (req: Request, res: Response) => {
+  try {
+    const { waCloudEnabled, waCloudPhoneNumberId, waCloudAccessToken, waCloudRecipients } = req.body as {
+      waCloudEnabled?: boolean;
+      waCloudPhoneNumberId?: string;
+      waCloudAccessToken?: string;
+      waCloudRecipients?: string;
+    };
+
+    const existing = await db.select().from(botSettingsTable).limit(1).then(r => r[0]);
+    if (!existing) { res.status(404).json({ success: false, message: "Settings not found" }); return; }
+
+    await db.update(botSettingsTable).set({
+      waCloudEnabled: waCloudEnabled ?? existing.waCloudEnabled,
+      waCloudPhoneNumberId: waCloudPhoneNumberId ?? existing.waCloudPhoneNumberId,
+      waCloudAccessToken: waCloudAccessToken ?? existing.waCloudAccessToken,
+      waCloudRecipients: waCloudRecipients ?? existing.waCloudRecipients,
+      updatedAt: new Date(),
+    }).where(undefined as any);
+
+    res.json({ success: true, message: "Cloud API settings saved" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
+  }
+});
+
+/** POST /api/whatsapp/cloud/test — send a test message via Cloud API */
+router.post("/whatsapp/cloud/test", async (_req: Request, res: Response) => {
+  try {
+    const settings = await db.select().from(botSettingsTable).limit(1).then(r => r[0]);
+    if (!settings?.waCloudPhoneNumberId || !settings.waCloudAccessToken) {
+      res.status(400).json({ success: false, message: "Phone Number ID and Access Token are required" });
+      return;
+    }
+
+    const recipients = (settings.waCloudRecipients ?? "")
+      .split(",").map(s => s.trim()).filter(Boolean);
+    if (recipients.length === 0) {
+      res.status(400).json({ success: false, message: "No recipient numbers configured" });
+      return;
+    }
+
+    const testMsg = `🧪 TEST — Deriv Signal Bot (Cloud API)\n\n✅ Meta WhatsApp Cloud API is working!\nSignals will appear here.\n\n#tradetowithdraw`;
+    const { sent, failed } = await sendViaCloudAPI(settings.waCloudPhoneNumberId, settings.waCloudAccessToken, recipients, testMsg);
+    res.json({ success: sent > 0, sent, failed });
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
+  }
+});
+
+// ─── CallMeBot ────────────────────────────────────────────────────────────────
+
+/** POST /api/whatsapp/callmebot/settings — save CallMeBot credentials */
+router.post("/whatsapp/callmebot/settings", async (req: Request, res: Response) => {
+  try {
+    const { callmebotEnabled, callmebotPhone, callmebotApiKey } = req.body as {
+      callmebotEnabled?: boolean;
+      callmebotPhone?: string;
+      callmebotApiKey?: string;
+    };
+
+    const existing = await db.select().from(botSettingsTable).limit(1).then(r => r[0]);
+    if (!existing) { res.status(404).json({ success: false, message: "Settings not found" }); return; }
+
+    await db.update(botSettingsTable).set({
+      callmebotEnabled: callmebotEnabled ?? existing.callmebotEnabled,
+      callmebotPhone: callmebotPhone ?? existing.callmebotPhone,
+      callmebotApiKey: callmebotApiKey ?? existing.callmebotApiKey,
+      updatedAt: new Date(),
+    }).where(undefined as any);
+
+    res.json({ success: true, message: "CallMeBot settings saved" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
+  }
+});
+
+/** POST /api/whatsapp/callmebot/test — send a test message via CallMeBot */
+router.post("/whatsapp/callmebot/test", async (_req: Request, res: Response) => {
+  try {
+    const settings = await db.select().from(botSettingsTable).limit(1).then(r => r[0]);
+    if (!settings?.callmebotPhone || !settings.callmebotApiKey) {
+      res.status(400).json({ success: false, message: "Phone number and API key are required" });
+      return;
+    }
+
+    const testMsg = `🧪 TEST — Deriv Signal Bot (CallMeBot)\n\n✅ CallMeBot API is working!\nSignals will appear here.\n\n#tradetowithdraw`;
+    const ok = await sendViaCallMeBot(settings.callmebotPhone, settings.callmebotApiKey, testMsg);
+    res.json({ success: ok, message: ok ? "Test sent successfully" : "CallMeBot returned an error — check your phone & API key" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
+  }
+});
+
 export default router;

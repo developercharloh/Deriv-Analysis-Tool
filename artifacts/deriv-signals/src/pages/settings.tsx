@@ -38,7 +38,7 @@ export function Settings() {
   const testTelegramMutation = useTestTelegram();
   const { toast } = useToast();
 
-  // WhatsApp state
+  // WhatsApp — Baileys (QR)
   const [waStatus, setWaStatus] = useState<WAStatus>("disconnected");
   const [waQR, setWaQR] = useState<string | null>(null);
   const [waEnabled, setWaEnabled] = useState(false);
@@ -49,6 +49,21 @@ export function Settings() {
   const [waRefreshing, setWaRefreshing] = useState(false);
   const [waResetting, setWaResetting] = useState(false);
   const [waResolving, setWaResolving] = useState(false);
+
+  // WhatsApp — Meta Cloud API
+  const [cloudEnabled, setCloudEnabled] = useState(false);
+  const [cloudPhoneNumberId, setCloudPhoneNumberId] = useState("");
+  const [cloudAccessToken, setCloudAccessToken] = useState("");
+  const [cloudRecipients, setCloudRecipients] = useState("");
+  const [cloudSaving, setCloudSaving] = useState(false);
+  const [cloudTesting, setCloudTesting] = useState(false);
+
+  // WhatsApp — CallMeBot
+  const [botEnabled, setBotEnabled] = useState(false);
+  const [botPhone, setBotPhone] = useState("");
+  const [botApiKey, setBotApiKey] = useState("");
+  const [botSaving, setBotSaving] = useState(false);
+  const [botTesting, setBotTesting] = useState(false);
 
   // Poll WhatsApp status every 3s
   const pollWaStatus = useCallback(async () => {
@@ -69,8 +84,16 @@ export function Settings() {
   // Load WhatsApp settings from server settings when available
   useEffect(() => {
     if (settings) {
-      setWaEnabled((settings as any).whatsappEnabled ?? false);
-      setWaTargetJids((settings as any).whatsappTargetJids ?? "");
+      const s = settings as any;
+      setWaEnabled(s.whatsappEnabled ?? false);
+      setWaTargetJids(s.whatsappTargetJids ?? "");
+      setCloudEnabled(s.waCloudEnabled ?? false);
+      setCloudPhoneNumberId(s.waCloudPhoneNumberId ?? "");
+      setCloudAccessToken(s.waCloudAccessToken ?? "");
+      setCloudRecipients(s.waCloudRecipients ?? "");
+      setBotEnabled(s.callmebotEnabled ?? false);
+      setBotPhone(s.callmebotPhone ?? "");
+      setBotApiKey(s.callmebotApiKey ?? "");
     }
   }, [settings]);
 
