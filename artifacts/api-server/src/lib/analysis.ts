@@ -1636,7 +1636,6 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
   return results.sort((a, b) => a.symbol.localeCompare(b.symbol));
 }
 
-/** Returns per-symbol tick count and current ensemble state — for diagnostics. */
 /**
  * Returns current 1000-tick digit frequency array (0–9) for a symbol.
  * Returns null if insufficient tick history.
