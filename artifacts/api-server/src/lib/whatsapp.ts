@@ -1,4 +1,5 @@
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import { db } from "@workspace/db";
 import { botSettingsTable } from "@workspace/db/schema";
@@ -148,7 +149,7 @@ async function createSocket(): Promise<void> {
           if (reconnectTimer) clearTimeout(reconnectTimer);
           reconnectTimer = setTimeout(() => {
             createSocket().catch((err) => logger.error({ err }, "WhatsApp reconnect failed"));
-          }, 5000);
+          }, 20_000);
         } else {
           // Logged out — clear QR so user re-scans
           currentQrBase64 = null;
@@ -184,6 +185,29 @@ export function stopWhatsApp(): void {
 export async function refreshQR(): Promise<void> {
   stopWhatsApp();
   await new Promise((r) => setTimeout(r, 500));
+  await startWhatsApp();
+}
+
+/**
+ * Wipe all stored credentials and start a completely fresh session.
+ * Use this when "device couldn't link" appears — it removes the old
+ * fingerprint so WhatsApp treats this as a brand-new device.
+ */
+export async function resetSession(): Promise<void> {
+  stopWhatsApp();
+
+  // Delete every file inside the auth directory (keep the directory itself)
+  try {
+    const entries = fs.readdirSync(AUTH_DIR);
+    for (const entry of entries) {
+      fs.rmSync(path.join(AUTH_DIR, entry), { recursive: true, force: true });
+    }
+    logger.info({ authDir: AUTH_DIR }, "WhatsApp session credentials cleared");
+  } catch (err) {
+    logger.warn({ err }, "Could not clear auth dir (may already be empty)");
+  }
+
+  await new Promise((r) => setTimeout(r, 1000));
   await startWhatsApp();
 }
 

@@ -8,6 +8,7 @@ import {
   resolveGroupInvite,
   sendWhatsAppMessage,
   refreshQR,
+  resetSession,
 } from "../lib/whatsapp.js";
 
 const router: IRouter = Router();
@@ -21,11 +22,21 @@ router.get("/whatsapp/status", (_req: Request, res: Response) => {
   });
 });
 
-/** POST /api/whatsapp/refresh-qr — force a new QR code */
+/** POST /api/whatsapp/refresh-qr — soft restart (same credentials) */
 router.post("/whatsapp/refresh-qr", async (_req: Request, res: Response) => {
   try {
     await refreshQR();
     res.json({ success: true, message: "QR refresh initiated — check status in a moment" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
+  }
+});
+
+/** POST /api/whatsapp/reset-session — wipe credentials + fresh QR (fixes "device couldn't link") */
+router.post("/whatsapp/reset-session", async (_req: Request, res: Response) => {
+  try {
+    await resetSession();
+    res.json({ success: true, message: "Session cleared — new QR generating, scan it with WhatsApp." });
   } catch (err) {
     res.status(500).json({ success: false, message: String(err) });
   }

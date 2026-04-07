@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useGetSettings, useUpdateSettings, useTestTelegram } from "@workspace/api-client-react";
 import { useForm, Controller } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Send, Save, Settings2, Power, MessageCircle, QrCode, RefreshCw, CheckCircle2, WifiOff, Link, Bell, BellOff, Clock, Timer } from "lucide-react";
+import { Loader2, Send, Save, Settings2, Power, MessageCircle, QrCode, RefreshCw, CheckCircle2, WifiOff, Link, Bell, BellOff, Clock, Timer, RotateCcw } from "lucide-react";
 
 const MARKETS = [
   { symbol: "R_10",   name: "Volatility 10 Index" },
@@ -47,6 +47,7 @@ export function Settings() {
   const [waSaving, setWaSaving] = useState(false);
   const [waTesting, setWaTesting] = useState(false);
   const [waRefreshing, setWaRefreshing] = useState(false);
+  const [waResetting, setWaResetting] = useState(false);
   const [waResolving, setWaResolving] = useState(false);
 
   // Poll WhatsApp status every 3s
