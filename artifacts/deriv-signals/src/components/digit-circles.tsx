@@ -545,7 +545,12 @@ export function DerivMarketPulse() {
   const activeMarket = VOLATILITY_MARKETS[symbolIdx];
   const activeSignal = SIGNAL_TYPES.find(s => s.id === signalType)!;
 
-  const marketOptions = VOLATILITY_MARKETS.map((m, i) => ({ value: String(i), label: m.label }));
+  const marketOptions = MARKET_GROUPS.flatMap(g =>
+    g.markets.map(m => ({
+      value: String(VOLATILITY_MARKETS.indexOf(m as any)),
+      label: `[${g.group}] ${m.short}`,
+    }))
+  );
   const signalOptions = SIGNAL_TYPES.map(s => ({ value: s.id, label: s.label }));
 
   return (
