@@ -5,7 +5,7 @@ import { z } from "zod/v4";
 
 export const signalTypeEnum = pgEnum("signal_type", ["OVER", "UNDER", "EVEN", "ODD", "RISE", "FALL", "MATCHES", "DIFFERS"]);
 export const confidenceEnum = pgEnum("confidence_level", ["LOW", "MEDIUM", "HIGH"]);
-export const outcomeEnum = pgEnum("signal_outcome", ["pending", "won", "lost", "expired"]);
+export const outcomeEnum = pgEnum("signal_outcome", ["pending", "won", "lost", "expired", "cancelled"]);
 
 export const signalsTable = pgTable("signals", {
   id: serial("id").primaryKey(),
