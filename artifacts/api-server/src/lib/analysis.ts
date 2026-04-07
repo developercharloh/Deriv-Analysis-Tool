@@ -1508,13 +1508,13 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
           barFound = overBarrier !== null; loseOk = losingOkOver;
           dominantPosOk = dominantOkOver;
           leastPosOkGate = leastPosOkOver;
-          noTiesOkGate   = noTiesOk;
+          noTiesOkGate   = noTiesOkOver;
         } else if (type === "UNDER") {
           ensmOk = ensemble.underScore > 0.50; ensmScore = ensemble.underScore;
           barFound = underBarrier !== null; loseOk = losingOkUnder;
           dominantPosOk = dominantOkUnder;
           leastPosOkGate = leastPosOkUnder;
-          noTiesOkGate   = noTiesOk;
+          noTiesOkGate   = noTiesOkUnder;
         } else if (type === "RISE") {
           ensmOk = ensemble.riseScore > 0.52; ensmScore = ensemble.riseScore;
           streakOk = downStreak >= 2; streakN = downStreak;
@@ -1554,7 +1554,7 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         if (dominantPosOk === false) blocked.push("PRIMARY CONDITION FAILED: rank-1 & rank-2 digits not ≥2 places from barrier");
         if (leastPosOkGate === false) blocked.push("Red bar (least-appearing digit) not ≥2 places inside winning side");
         if (noTiesOkGate === false)   blocked.push("Tied digit frequencies detected — market not stable enough");
-        if (loseOk === false)   blocked.push("Hot losing-side digit detected (>10%)");
+        if (loseOk === false)   blocked.push("Hot losing-side digit detected (≥10.2%)");
         if (strOk === false)    blocked.push("1k-tick strength guard failed");
         if (recOk === false)    blocked.push("Recency guard failed (last 25/10 ticks reversed)");
         if (!wOk)       blocked.push(`Window confluence too low (${wCount}/${wRequired} windows)`);
