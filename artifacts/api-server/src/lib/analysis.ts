@@ -1074,12 +1074,17 @@ export function analyzeTickAndGenerateSignals(
     const freqs1k    = digitFreqs(state.ticks, 1000);
     const underEntry = findOptimalUnderBarrier(freqs1k);
     if (underEntry !== null) {
-      // ── PRIMARY CONDITION (checked first — blocks everything else) ──────
-      // Both rank-1 (green) and rank-2 (blue) dominant digits must be at
-      // least 2 digits BELOW the barrier.  e.g. UNDER 5 → both must be ≤ 3.
-      // If this fails no further analysis is performed and no signal fires.
+      // ── COMPULSORY CONDITION 1: dominant digit positioning (checked first) ─
+      // Both rank-1 (green) and rank-2 (blue) must be ≤ barrier-2.
       const dominantOk = checkDominantDigitPosition(freqs1k, "UNDER", underEntry.barrier);
-      if (dominantOk) {
+      // ── COMPULSORY CONDITION 2: least-appearing digit positioning ──────────
+      // Red bar (rank-10) must also be ≤ barrier-2 (well inside winning side).
+      const leastPosOk = checkLeastAppearingPosition(freqs1k, "UNDER", underEntry.barrier);
+      // ── COMPULSORY CONDITION 3: no tied digit frequencies ──────────────────
+      // Market must have a distinct distribution — no two digits share the same %.
+      const noTiesOk   = checkNoTiedFrequencies(freqs1k);
+
+      if (dominantOk && leastPosOk && noTiesOk) {
         const wins    = windowConfluence(state.ticks, "UNDER");
         if (wins >= 1) {
           // Losing-side guard: every digit on the losing side (barrier … 9)
@@ -1456,6 +1461,13 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
       const dominantOkOver  = overBarrier  ? checkDominantDigitPosition(freqs1k, "OVER",  overBarrier.barrier)  : false;
       const dominantOkUnder = underBarrier ? checkDominantDigitPosition(freqs1k, "UNDER", underBarrier.barrier) : false;
 
+      // Least-appearing digit position guards (red bar must be 2+ digits inside winning side)
+      const leastPosOkOver  = overBarrier  ? checkLeastAppearingPosition(freqs1k, "OVER",  overBarrier.barrier)  : false;
+      const leastPosOkUnder = underBarrier ? checkLeastAppearingPosition(freqs1k, "UNDER", underBarrier.barrier) : false;
+
+      // No tied frequencies guard (all 10 digit %s must be distinct)
+      const noTiesOk = checkNoTiedFrequencies(freqs1k);
+
       // Cooldown helper
       const cdSecs = (type: SignalType): number => {
         const last = state.lastSignalTimes[type];
@@ -1473,6 +1485,8 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         let minTicks = 50, ensmOk = false, ensmScore = 0;
         let barFound: boolean | null = null, loseOk: boolean | null = null;
         let dominantPosOk: boolean | null = null;
+        let leastPosOkGate: boolean | null = null;
+        let noTiesOkGate: boolean | null = null;
         let strOk: boolean | null = null, recOk: boolean | null = null;
         let streakOk: boolean | null = null, streakN: number | null = null;
         let wRequired = 1;
@@ -1481,10 +1495,14 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
           ensmOk = ensemble.overScore > 0.50; ensmScore = ensemble.overScore;
           barFound = overBarrier !== null; loseOk = losingOkOver;
           dominantPosOk = dominantOkOver;
+          leastPosOkGate = leastPosOkOver;
+          noTiesOkGate   = noTiesOk;
         } else if (type === "UNDER") {
           ensmOk = ensemble.underScore > 0.50; ensmScore = ensemble.underScore;
           barFound = underBarrier !== null; loseOk = losingOkUnder;
           dominantPosOk = dominantOkUnder;
+          leastPosOkGate = leastPosOkUnder;
+          noTiesOkGate   = noTiesOk;
         } else if (type === "RISE") {
           ensmOk = ensemble.riseScore > 0.52; ensmScore = ensemble.riseScore;
           streakOk = downStreak >= 2; streakN = downStreak;
@@ -1522,6 +1540,8 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         if (streakOk === false) blocked.push(`Insufficient streak (${streakN})`);
         if (barFound === false) blocked.push("No valid barrier found (individual digits do not support entry)");
         if (dominantPosOk === false) blocked.push("PRIMARY CONDITION FAILED: rank-1 & rank-2 digits not ≥2 places from barrier");
+        if (leastPosOkGate === false) blocked.push("Red bar (least-appearing digit) not ≥2 places inside winning side");
+        if (noTiesOkGate === false)   blocked.push("Tied digit frequencies detected — market not stable enough");
         if (loseOk === false)   blocked.push("Hot losing-side digit detected (>10%)");
         if (strOk === false)    blocked.push("1k-tick strength guard failed");
         if (recOk === false)    blocked.push("Recency guard failed (last 25/10 ticks reversed)");
@@ -1532,8 +1552,8 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
           (!["OVER","UNDER","RISE","FALL"].includes(type) || (!anomaly && entropyOk)) &&
           (!["MATCHES","DIFFERS"].includes(type) || !anomaly) &&
           ensmOk && (streakOk !== false) && (barFound !== false) &&
-          (dominantPosOk !== false) && (loseOk !== false) &&
-          (strOk !== false) && (recOk !== false) && wOk && pSimOk;
+          (dominantPosOk !== false) && (leastPosOkGate !== false) && (noTiesOkGate !== false) &&
+          (loseOk !== false) && (strOk !== false) && (recOk !== false) && wOk && pSimOk;
 
         return {
           cooldownOk: cdOk, cooldownSecondsRemaining: cdSecs(type),
