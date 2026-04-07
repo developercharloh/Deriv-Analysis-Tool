@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { AppLayout } from "@/components/layout/app-layout";
+import { InstallTab } from "@/components/layout/install-tab";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -627,6 +628,8 @@ export function Settings() {
 
         </CardContent>
       </Card>
+
+      <InstallTab />
     </AppLayout>
   );
 }

@@ -1,7 +1,6 @@
 import { ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
-import { InstallTab } from "./install-tab";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   return (
@@ -35,9 +34,6 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </main>
         </div>
       </div>
-
-      {/* Floating install tab — visible on all admin pages */}
-      <InstallTab />
     </>
   );
 }

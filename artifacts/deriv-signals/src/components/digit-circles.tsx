@@ -30,35 +30,44 @@ const SIGNAL_TYPES = [
 type SignalTypeId = typeof SIGNAL_TYPES[number]["id"];
 
 /* digit group helpers */
-function isEven(d: number)  { return d % 2 === 0; }
-function isOver(d: number)  { return d >= 5; }
-
 function getDigitTag(d: number, signalType: SignalTypeId): { label: string; color: string } | null {
   switch (signalType) {
     case "even-odd":
-      return isEven(d)
+      return d % 2 === 0
         ? { label: "E", color: "#7c3aed" }
         : { label: "O", color: "#ec4899" };
     case "over-under":
-      return isOver(d)
+      return d >= 5
         ? { label: "OV", color: "#059669" }
         : { label: "UN", color: "#f59e0b" };
     case "matches-differs":
-      return null; // no tag for M/D — all digits equal
+      return null;
   }
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Heat-map coloring
+   Ranking-based colour system
+   rank 1 = most appearing  → green
+   rank 2                   → blue
+   rank 9                   → yellow (2nd least)
+   rank 10 = least          → red
+   others                   → neutral slate
 ───────────────────────────────────────────────────────────────── */
-function digitColor(pct: number, min: number, max: number): string {
-  const range = max - min || 1;
-  const norm = (pct - min) / range;
-  if (norm >= 0.8) return "#ef4444";
-  if (norm >= 0.6) return "#f97316";
-  if (norm >= 0.4) return "#eab308";
-  if (norm >= 0.2) return "#0ea5e9";
-  return "#6366f1";
+function getRankColor(rank: number): string {
+  if (rank === 1)  return "#10b981"; // green  — most
+  if (rank === 2)  return "#0ea5e9"; // blue   — 2nd most
+  if (rank === 10) return "#ef4444"; // red    — least
+  if (rank === 9)  return "#eab308"; // yellow — 2nd least
+  return "#64748b";                  // slate  — others
+}
+
+function computeRanks(distribution: number[]): Record<number, number> {
+  const sorted = [...distribution]
+    .map((pct, digit) => ({ digit, pct }))
+    .sort((a, b) => b.pct - a.pct);
+  const map: Record<number, number> = {};
+  sorted.forEach(({ digit }, i) => { map[digit] = i + 1; });
+  return map;
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -214,17 +223,36 @@ function StyledSelect({ value, onChange, options, accentColor = "#0ea5e9" }: {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   DigitCircle
+   DigitCircle  — uses rank-based color, shows ticker arrow when active
 ───────────────────────────────────────────────────────────────── */
-function DigitCircle({ digit, pct, isActive, min, max, signalType }: {
+function DigitCircle({ digit, pct, isActive, rankColor, signalType }: {
   digit: number; pct: number; isActive: boolean;
-  min: number; max: number; signalType: SignalTypeId;
+  rankColor: string; signalType: SignalTypeId;
 }) {
-  const heatColor = digitColor(pct, min, max);
   const tag = getDigitTag(digit, signalType);
 
   return (
-    <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">
+    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+
+      {/* Ticker arrow — points down at the active circle, fades when inactive */}
+      <AnimatePresence mode="wait">
+        {isActive ? (
+          <motion.div
+            key="arrow"
+            initial={{ opacity: 0, y: -6, scale: 0.6 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={{ type: "spring", stiffness: 500, damping: 22 }}
+            className="text-[12px] font-black leading-none"
+            style={{ color: rankColor, filter: `drop-shadow(0 0 4px ${rankColor}cc)` }}
+          >
+            ▼
+          </motion.div>
+        ) : (
+          <div key="spacer" style={{ height: 16 }} />
+        )}
+      </AnimatePresence>
+
       {/* Signal tag badge */}
       {tag ? (
         <span
@@ -240,16 +268,16 @@ function DigitCircle({ digit, pct, isActive, min, max, signalType }: {
       {/* Circle */}
       <motion.div
         animate={isActive
-          ? { scale: [1, 1.20, 1], boxShadow: [`0 0 0px ${heatColor}00`, `0 0 20px ${heatColor}bb`, `0 0 0px ${heatColor}00`] }
+          ? { scale: [1, 1.18, 1], boxShadow: [`0 0 0px ${rankColor}00`, `0 0 20px ${rankColor}bb`, `0 0 0px ${rankColor}00`] }
           : {}}
         transition={{ duration: 0.5 }}
         className="relative flex items-center justify-center rounded-full font-mono font-black text-sm select-none"
         style={{
           width: 44, height: 44,
-          background: isActive ? heatColor : `${heatColor}20`,
-          border: `2px solid ${isActive ? heatColor : heatColor + "55"}`,
-          color: isActive ? "#fff" : heatColor,
-          boxShadow: isActive ? `0 0 16px ${heatColor}90` : "none",
+          background: isActive ? rankColor : `${rankColor}20`,
+          border: `2px solid ${isActive ? rankColor : rankColor + "55"}`,
+          color: isActive ? "#fff" : rankColor,
+          boxShadow: isActive ? `0 0 16px ${rankColor}90` : "none",
           transition: "background 0.3s, color 0.3s, border-color 0.3s",
         }}
       >
@@ -259,23 +287,23 @@ function DigitCircle({ digit, pct, isActive, min, max, signalType }: {
             className="absolute inset-0 rounded-full"
             animate={{ opacity: [0.55, 0] }}
             transition={{ duration: 0.9, ease: "easeOut" }}
-            style={{ background: heatColor }}
+            style={{ background: rankColor }}
           />
         )}
       </motion.div>
 
-      {/* Bar */}
-      <div className="w-full rounded-full overflow-hidden" style={{ height: 4, background: `${heatColor}20` }}>
+      {/* Bar — colored by rank */}
+      <div className="w-full rounded-full overflow-hidden" style={{ height: 4, background: `${rankColor}20` }}>
         <motion.div
           className="h-full rounded-full"
-          style={{ background: heatColor }}
+          style={{ background: rankColor }}
           animate={{ width: `${Math.min(100, pct * 6.5)}%` }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         />
       </div>
 
       {/* Percentage */}
-      <span className="font-mono text-[10px] font-bold tabular-nums" style={{ color: heatColor }}>
+      <span className="font-mono text-[10px] font-bold tabular-nums" style={{ color: rankColor }}>
         {pct.toFixed(1)}%
       </span>
     </div>
@@ -283,38 +311,24 @@ function DigitCircle({ digit, pct, isActive, min, max, signalType }: {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   DigitRow  (upper 0-4 or lower 5-9)
+   DigitRow  — no header section, compact gap
 ───────────────────────────────────────────────────────────────── */
-function DigitRow({ digits, distribution, liveDigit, min, max, signalType, rowLabel, rowColor }: {
+function DigitRow({ digits, distribution, liveDigit, rankMap, signalType }: {
   digits: number[]; distribution: number[]; liveDigit: number | null;
-  min: number; max: number; signalType: SignalTypeId;
-  rowLabel: string; rowColor: string;
+  rankMap: Record<number, number>; signalType: SignalTypeId;
 }) {
-  const rowTotal = digits.reduce((acc, d) => acc + (distribution[d] ?? 0), 0);
-
   return (
-    <div className="rounded-xl p-3" style={{ background: `${rowColor}06`, border: `1px solid ${rowColor}20` }}>
-      {/* Row header */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: rowColor }}>
-          {rowLabel}
-        </span>
-        <span className="font-mono text-[11px] font-bold" style={{ color: rowColor }}>
-          {rowTotal.toFixed(1)}% share
-        </span>
-      </div>
-      {/* Digit circles */}
-      <div className="flex gap-2">
-        {digits.map(d => (
-          <DigitCircle
-            key={d} digit={d}
-            pct={distribution[d] ?? 0}
-            isActive={liveDigit === d}
-            min={min} max={max}
-            signalType={signalType}
-          />
-        ))}
-      </div>
+    <div className="flex gap-2">
+      {digits.map(d => (
+        <DigitCircle
+          key={d}
+          digit={d}
+          pct={distribution[d] ?? 0}
+          isActive={liveDigit === d}
+          rankColor={getRankColor(rankMap[d] ?? 5)}
+          signalType={signalType}
+        />
+      ))}
     </div>
   );
 }
@@ -333,11 +347,11 @@ function LivePrice({ price, prevPrice, liveDigit, pipSize, status }: {
 }) {
   const dir = price !== null && prevPrice !== null
     ? price > prevPrice ? "up" : price < prevPrice ? "down" : "flat" : "flat";
-  const priceStr    = price !== null ? price.toFixed(pipSize) : "——.——";
-  const prefix      = price !== null ? priceStr.slice(0, -1) : "——.——";
+  const priceStr     = price !== null ? price.toFixed(pipSize) : "——.——";
+  const prefix       = price !== null ? priceStr.slice(0, -1) : "——.——";
   const lastDigitStr = liveDigit !== null ? String(liveDigit) : "—";
-  const arrowColor  = dir === "up" ? "#10b981" : dir === "down" ? "#ef4444" : "#94a3b8";
-  const digitColor2 = liveDigit !== null ? DIGIT_COLORS_10[liveDigit] : "#0ea5e9";
+  const arrowColor   = dir === "up" ? "#10b981" : dir === "down" ? "#ef4444" : "#94a3b8";
+  const digitColor   = liveDigit !== null ? DIGIT_COLORS_10[liveDigit] : "#0ea5e9";
 
   return (
     <div className="flex flex-col gap-1">
@@ -365,7 +379,7 @@ function LivePrice({ price, prevPrice, liveDigit, pipSize, status }: {
             exit={{ y: 16, opacity: 0 }}
             transition={{ duration: 0.22 }}
             className="text-3xl"
-            style={{ color: digitColor2, textShadow: `0 0 14px ${digitColor2}80` }}
+            style={{ color: digitColor, textShadow: `0 0 14px ${digitColor}80` }}
           >
             {lastDigitStr}
           </motion.span>
@@ -408,35 +422,24 @@ function TickerStrip({ recentDigits }: { recentDigits: number[] }) {
 }
 
 /* ─────────────────────────────────────────────────────────────────
-   Row config per signal type
+   Rank legend
 ───────────────────────────────────────────────────────────────── */
-function getRowConfig(signalType: SignalTypeId): {
-  upperLabel: string; upperColor: string;
-  lowerLabel: string; lowerColor: string;
-} {
-  switch (signalType) {
-    case "even-odd":
-      return {
-        upperLabel: "Digits 0 – 4  ·  Even: 0, 2, 4  |  Odd: 1, 3",
-        upperColor: "#7c3aed",
-        lowerLabel: "Digits 5 – 9  ·  Odd: 5, 7, 9  |  Even: 6, 8",
-        lowerColor: "#ec4899",
-      };
-    case "over-under":
-      return {
-        upperLabel: "UNDER  ·  Digits 0 – 4",
-        upperColor: "#f59e0b",
-        lowerLabel: "OVER   ·  Digits 5 – 9",
-        lowerColor: "#059669",
-      };
-    case "matches-differs":
-      return {
-        upperLabel: "Digits 0 – 4  ·  Matches / Differs",
-        upperColor: "#0ea5e9",
-        lowerLabel: "Digits 5 – 9  ·  Matches / Differs",
-        lowerColor: "#6366f1",
-      };
-  }
+function RankLegend() {
+  return (
+    <div className="flex items-center gap-3 flex-wrap text-[9px] font-semibold uppercase tracking-wide text-slate-400">
+      {[
+        { c: "#10b981", l: "Most appearing"  },
+        { c: "#0ea5e9", l: "2nd most"        },
+        { c: "#64748b", l: "Mid range"       },
+        { c: "#eab308", l: "2nd least"       },
+        { c: "#ef4444", l: "Least appearing" },
+      ].map(({ c, l }) => (
+        <div key={l} className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full" style={{ background: c }} />{l}
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /* ─────────────────────────────────────────────────────────────────
@@ -446,15 +449,11 @@ function MarketDigitPanel({ symbol, signalType }: { symbol: string; signalType: 
   const state = useDerivDigits(symbol);
   const { distribution, livePrice, liveDigit, pipSize, prevPrice, status, recentDigits, digits } = state;
 
-  const validPcts = distribution.filter(p => p > 0);
-  const minPct = validPcts.length ? Math.min(...validPcts) : 0;
-  const maxPct = validPcts.length ? Math.max(...validPcts) : 10;
+  const rankMap  = computeRanks(distribution);
   const tickCount = digits.length;
 
-  const { upperLabel, upperColor, lowerLabel, lowerColor } = getRowConfig(signalType);
-
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Live price + tick count */}
       <div className="flex items-start justify-between gap-4">
         <LivePrice
@@ -475,10 +474,8 @@ function MarketDigitPanel({ symbol, signalType }: { symbol: string; signalType: 
         digits={[0, 1, 2, 3, 4]}
         distribution={distribution}
         liveDigit={liveDigit}
-        min={minPct} max={maxPct}
+        rankMap={rankMap}
         signalType={signalType}
-        rowLabel={upperLabel}
-        rowColor={upperColor}
       />
 
       {/* Lower row: digits 5–9 */}
@@ -486,26 +483,12 @@ function MarketDigitPanel({ symbol, signalType }: { symbol: string; signalType: 
         digits={[5, 6, 7, 8, 9]}
         distribution={distribution}
         liveDigit={liveDigit}
-        min={minPct} max={maxPct}
+        rankMap={rankMap}
         signalType={signalType}
-        rowLabel={lowerLabel}
-        rowColor={lowerColor}
       />
 
-      {/* Heat legend */}
-      <div className="flex items-center gap-3 flex-wrap text-[9px] font-semibold uppercase tracking-wide text-slate-400">
-        {[
-          { c: "#6366f1", l: "Cold (rare)" },
-          { c: "#0ea5e9", l: "Normal" },
-          { c: "#eab308", l: "Warm" },
-          { c: "#f97316", l: "Hot" },
-          { c: "#ef4444", l: "Very Hot" },
-        ].map(({ c, l }) => (
-          <div key={l} className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full" style={{ background: c }} />{l}
-          </div>
-        ))}
-      </div>
+      {/* Rank legend */}
+      <RankLegend />
 
       {/* Recent digits ticker */}
       <div>
@@ -520,14 +503,14 @@ function MarketDigitPanel({ symbol, signalType }: { symbol: string; signalType: 
    Main Export: DerivMarketPulse
 ───────────────────────────────────────────────────────────────── */
 export function DerivMarketPulse() {
-  const [symbolIdx, setSymbolIdx]     = useState(0);
-  const [signalType, setSignalType]   = useState<SignalTypeId>("even-odd");
+  const [symbolIdx, setSymbolIdx]   = useState(0);
+  const [signalType, setSignalType] = useState<SignalTypeId>("even-odd");
 
-  const activeMarket  = VOLATILITY_MARKETS[symbolIdx];
-  const activeSignal  = SIGNAL_TYPES.find(s => s.id === signalType)!;
+  const activeMarket = VOLATILITY_MARKETS[symbolIdx];
+  const activeSignal = SIGNAL_TYPES.find(s => s.id === signalType)!;
 
-  const marketOptions  = VOLATILITY_MARKETS.map((m, i) => ({ value: String(i), label: m.label }));
-  const signalOptions  = SIGNAL_TYPES.map(s => ({ value: s.id, label: s.label }));
+  const marketOptions = VOLATILITY_MARKETS.map((m, i) => ({ value: String(i), label: m.label }));
+  const signalOptions = SIGNAL_TYPES.map(s => ({ value: s.id, label: s.label }));
 
   return (
     <div>
@@ -552,7 +535,6 @@ export function DerivMarketPulse() {
 
       {/* ── Dropdowns ── */}
       <div className="flex flex-wrap gap-3 mb-4">
-        {/* Volatility / Market */}
         <div className="flex flex-col gap-1">
           <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 pl-1">Index</span>
           <StyledSelect
@@ -563,7 +545,6 @@ export function DerivMarketPulse() {
           />
         </div>
 
-        {/* Signal Type */}
         <div className="flex flex-col gap-1">
           <span className="text-[9px] font-bold uppercase tracking-widest text-slate-400 pl-1">Signal Type</span>
           <StyledSelect
@@ -574,7 +555,6 @@ export function DerivMarketPulse() {
           />
         </div>
 
-        {/* Active context pill */}
         <div className="flex items-end pb-0.5">
           <div
             className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-bold"
