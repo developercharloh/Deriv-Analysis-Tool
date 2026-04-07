@@ -11,13 +11,21 @@ const TICK_HISTORY_COUNT = 1000;
 
 const MARKET_GROUPS = [
   {
-    group: "Volatility 1s",
+    group: "Volatility Indices",
     markets: [
-      { symbol: "1HZ10V",  label: "Volatility 10 (1s)",  short: "Vol 10"   },
-      { symbol: "1HZ25V",  label: "Volatility 25 (1s)",  short: "Vol 25"   },
-      { symbol: "1HZ50V",  label: "Volatility 50 (1s)",  short: "Vol 50"   },
-      { symbol: "1HZ75V",  label: "Volatility 75 (1s)",  short: "Vol 75"   },
-      { symbol: "1HZ100V", label: "Volatility 100 (1s)", short: "Vol 100"  },
+      { symbol: "1HZ10V",  label: "Volatility 10 (1s) Index",  short: "Vol 10 (1s)"  },
+      { symbol: "R_10",    label: "Volatility 10 Index",        short: "Vol 10"        },
+      { symbol: "1HZ15V",  label: "Volatility 15 (1s) Index",  short: "Vol 15 (1s)"  },
+      { symbol: "1HZ25V",  label: "Volatility 25 (1s) Index",  short: "Vol 25 (1s)"  },
+      { symbol: "R_25",    label: "Volatility 25 Index",        short: "Vol 25"        },
+      { symbol: "1HZ30V",  label: "Volatility 30 (1s) Index",  short: "Vol 30 (1s)"  },
+      { symbol: "1HZ50V",  label: "Volatility 50 (1s) Index",  short: "Vol 50 (1s)"  },
+      { symbol: "R_50",    label: "Volatility 50 Index",        short: "Vol 50"        },
+      { symbol: "1HZ75V",  label: "Volatility 75 (1s) Index",  short: "Vol 75 (1s)"  },
+      { symbol: "R_75",    label: "Volatility 75 Index",        short: "Vol 75"        },
+      { symbol: "1HZ90V",  label: "Volatility 90 (1s) Index",  short: "Vol 90 (1s)"  },
+      { symbol: "1HZ100V", label: "Volatility 100 (1s) Index", short: "Vol 100 (1s)" },
+      { symbol: "R_100",   label: "Volatility 100 Index",       short: "Vol 100"       },
     ],
   },
   {

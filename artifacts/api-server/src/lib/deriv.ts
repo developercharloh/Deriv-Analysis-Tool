@@ -13,21 +13,21 @@ type TickHandler = (tick: DerivTick) => void;
 const DERIV_WS_URL = "wss://ws.deriv.com/websockets/v3?app_id=1089";
 
 const MARKET_NAMES: Record<string, string> = {
-  // Standard Volatility Indices
-  R_10:  "Volatility 10",
-  R_25:  "Volatility 25",
-  R_50:  "Volatility 50",
-  R_75:  "Volatility 75",
-  R_100: "Volatility 100",
   // Volatility 1s Indices
-  "1HZ10V":  "Volatility 10 (1s)",
-  "1HZ15V":  "Volatility 15 (1s)",
-  "1HZ25V":  "Volatility 25 (1s)",
-  "1HZ30V":  "Volatility 30 (1s)",
-  "1HZ50V":  "Volatility 50 (1s)",
-  "1HZ75V":  "Volatility 75 (1s)",
-  "1HZ90V":  "Volatility 90 (1s)",
-  "1HZ100V": "Volatility 100 (1s)",
+  "1HZ10V":  "Volatility 10 (1s) Index",
+  "1HZ15V":  "Volatility 15 (1s) Index",
+  "1HZ25V":  "Volatility 25 (1s) Index",
+  "1HZ30V":  "Volatility 30 (1s) Index",
+  "1HZ50V":  "Volatility 50 (1s) Index",
+  "1HZ75V":  "Volatility 75 (1s) Index",
+  "1HZ90V":  "Volatility 90 (1s) Index",
+  "1HZ100V": "Volatility 100 (1s) Index",
+  // Standard Volatility Indices
+  R_10:  "Volatility 10 Index",
+  R_25:  "Volatility 25 Index",
+  R_50:  "Volatility 50 Index",
+  R_75:  "Volatility 75 Index",
+  R_100: "Volatility 100 Index",
   // Jump Indices
   "JD10":  "Jump 10 Index",
   "JD25":  "Jump 25 Index",
