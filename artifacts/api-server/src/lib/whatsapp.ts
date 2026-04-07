@@ -212,26 +212,42 @@ export async function resetSession(): Promise<void> {
 }
 
 /**
- * Convenience function — reads WhatsApp targets from the DB and sends to all.
- * Call this from every signal dispatch point instead of reading settings manually.
- * No-ops silently if WhatsApp is disabled or not connected.
+ * Convenience function — dispatches to ALL enabled WhatsApp channels:
+ *   1. Baileys (QR-linked session)
+ *   2. Meta WhatsApp Cloud API
+ *   3. CallMeBot
+ * Each method is attempted independently; failures in one do not block others.
  */
 export async function sendSignalToWhatsApp(text: string): Promise<void> {
+  // ── 1. Baileys (QR) ───────────────────────────────────────────────────────
   try {
-    if (!isWhatsAppConnected()) return;
-
-    const settings = await db.select().from(botSettingsTable).limit(1).then(r => r[0]);
-    if (!settings?.whatsappEnabled) return;
-
-    const jids = (settings.whatsappTargetJids || "")
-      .split(",")
-      .map((s) => s.trim())
-      .filter(Boolean);
-
-    if (jids.length === 0) return;
-
-    await sendWhatsAppMessage(jids, text);
+    if (isWhatsAppConnected()) {
+      const settings = await db.select().from(botSettingsTable).limit(1).then(r => r[0]);
+      if (settings?.whatsappEnabled) {
+        const jids = (settings.whatsappTargetJids || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+        if (jids.length > 0) await sendWhatsAppMessage(jids, text);
+      }
+    }
   } catch (err) {
-    logger.error({ err }, "sendSignalToWhatsApp error");
+    logger.error({ err }, "sendSignalToWhatsApp (Baileys) error");
+  }
+
+  // ── 2. Meta Cloud API ─────────────────────────────────────────────────────
+  try {
+    const { sendSignalViaCloud } = await import("./whatsapp-cloud.js");
+    await sendSignalViaCloud(text);
+  } catch (err) {
+    logger.error({ err }, "sendSignalToWhatsApp (Cloud API) error");
+  }
+
+  // ── 3. CallMeBot ──────────────────────────────────────────────────────────
+  try {
+    const { sendSignalViaCallMeBot } = await import("./callmebot.js");
+    await sendSignalViaCallMeBot(text);
+  } catch (err) {
+    logger.error({ err }, "sendSignalToWhatsApp (CallMeBot) error");
   }
 }
