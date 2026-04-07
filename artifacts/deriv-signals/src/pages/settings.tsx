@@ -143,6 +143,60 @@ export function Settings() {
     } finally { setTimeout(() => setWaResetting(false), 3000); }
   };
 
+  // ── Cloud API handlers ───────────────────────────────────────────────────────
+  const handleSaveCloud = async () => {
+    setCloudSaving(true);
+    try {
+      const res = await fetch("/api/whatsapp/cloud/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ waCloudEnabled: cloudEnabled, waCloudPhoneNumberId: cloudPhoneNumberId, waCloudAccessToken: cloudAccessToken, waCloudRecipients: cloudRecipients }),
+      });
+      const data = await res.json();
+      toast({ title: data.success ? "Saved" : "Error", description: data.message, variant: data.success ? "default" : "destructive" });
+    } catch {
+      toast({ title: "Error", description: "Failed to save Cloud API settings.", variant: "destructive" });
+    } finally { setCloudSaving(false); }
+  };
+
+  const handleTestCloud = async () => {
+    setCloudTesting(true);
+    try {
+      const res = await fetch("/api/whatsapp/cloud/test", { method: "POST" });
+      const data = await res.json();
+      toast({ title: data.success ? "Test Sent!" : "Failed", description: data.message || `Sent to ${data.sent} number(s).`, variant: data.success ? "default" : "destructive" });
+    } catch {
+      toast({ title: "Error", description: "Test failed.", variant: "destructive" });
+    } finally { setCloudTesting(false); }
+  };
+
+  // ── CallMeBot handlers ───────────────────────────────────────────────────────
+  const handleSaveBot = async () => {
+    setBotSaving(true);
+    try {
+      const res = await fetch("/api/whatsapp/callmebot/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callmebotEnabled: botEnabled, callmebotPhone: botPhone, callmebotApiKey: botApiKey }),
+      });
+      const data = await res.json();
+      toast({ title: data.success ? "Saved" : "Error", description: data.message, variant: data.success ? "default" : "destructive" });
+    } catch {
+      toast({ title: "Error", description: "Failed to save CallMeBot settings.", variant: "destructive" });
+    } finally { setBotSaving(false); }
+  };
+
+  const handleTestBot = async () => {
+    setBotTesting(true);
+    try {
+      const res = await fetch("/api/whatsapp/callmebot/test", { method: "POST" });
+      const data = await res.json();
+      toast({ title: data.success ? "Test Sent!" : "Failed", description: data.message, variant: data.success ? "default" : "destructive" });
+    } catch {
+      toast({ title: "Error", description: "Test failed.", variant: "destructive" });
+    } finally { setBotTesting(false); }
+  };
+
   const handleResolveGroup = async () => {
     if (!waInviteLink.trim()) return;
     setWaResolving(true);
