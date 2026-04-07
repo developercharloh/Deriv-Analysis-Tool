@@ -34,16 +34,6 @@ const MARKET_NAMES: Record<string, string> = {
   "JD50":  "Jump 50 Index",
   "JD75":  "Jump 75 Index",
   "JD100": "Jump 100 Index",
-  // Boom Indices
-  BOOM300:  "Boom 300 Index",
-  BOOM500:  "Boom 500 Index",
-  BOOM1000: "Boom 1000 Index",
-  // Crash Indices
-  CRASH300:  "Crash 300 Index",
-  CRASH500:  "Crash 500 Index",
-  CRASH1000: "Crash 1000 Index",
-  // Step Index (Flat)
-  stpRNG: "Step Index",
 };
 
 export function getMarketName(symbol: string): string {
