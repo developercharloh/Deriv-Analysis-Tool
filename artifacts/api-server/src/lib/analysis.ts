@@ -551,6 +551,28 @@ function losingDigitsBelowThreshold(
   return losing.every(d => freqs[d] < threshold);
 }
 
+// ─── OVER/UNDER ENTRY TRIGGER: 3 CONSECUTIVE LOSING-SIDE TICKS ──────────────
+// Before firing an OVER or UNDER signal the last N ticks (default 3) must all
+// have landed on the LOSING side of the contract.
+//
+//   OVER  barrier b → losing digits are 0 … b   (digit ≤ barrier)
+//   UNDER barrier b → losing digits are b … 9   (digit ≥ barrier)
+//
+// Rationale: three consecutive losing results indicate the market has been
+// "stuck" on the wrong side and is primed for a reversal into the winning side.
+function lastNTicksOnLosingSide(
+  ticks: DerivTick[],
+  type: "OVER" | "UNDER",
+  barrier: number,
+  n = 3,
+): boolean {
+  if (ticks.length < n) return false;
+  const recent = ticks.slice(-n);
+  return recent.every(t =>
+    type === "OVER" ? t.digit <= barrier : t.digit >= barrier,
+  );
+}
+
 // ─── EVEN / ODD STRENGTH GUARD ───────────────────────────────────────────────
 // All conditions evaluated against the last 1 000 ticks.
 // All three must pass before any other analysis is applied.
