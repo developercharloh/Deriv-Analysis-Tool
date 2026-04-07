@@ -11,6 +11,10 @@ function isExpired(signal: Signal): boolean {
   return Date.now() >= expiryMs;
 }
 
+function isActive(signal: Signal): boolean {
+  return !isExpired(signal) && signal.outcome !== 'cancelled';
+}
+
 export function useLiveSignals(initialSignals: Signal[] = []) {
   const [signals, setSignals] = useState<Signal[]>(() =>
     initialSignals.filter(s => !isExpired(s))
@@ -53,6 +57,13 @@ export function useLiveSignals(initialSignals: Signal[] = []) {
           try {
             const parsed = JSON.parse(event.data);
             if (parsed.type === 'connected') return;
+
+            // Signal cancelled — remove it from the live feed immediately
+            if (parsed.type === 'signal_cancelled') {
+              setSignals(prev => prev.filter(s => s.id !== parsed.id));
+              return;
+            }
+
             const newSignal: Signal = parsed;
             // Only add the signal if it hasn't already expired
             if (isExpired(newSignal)) return;
