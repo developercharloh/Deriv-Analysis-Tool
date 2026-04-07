@@ -730,6 +730,134 @@ export function Settings() {
         </CardContent>
       </Card>
 
+      {/* WhatsApp No-QR Methods */}
+      <Card className="glass-panel mt-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageCircle className="w-5 h-5 text-emerald-400" />
+            WhatsApp — No QR Required
+          </CardTitle>
+          <CardDescription>
+            Send signals via official API methods that never need a QR scan.
+            Both methods work alongside the QR method; enable as many as you like.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-8">
+
+          {/* ── Meta WhatsApp Cloud API ─────────────────────────────────── */}
+          <div className="space-y-4 p-5 bg-black/30 rounded-xl border border-white/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white font-semibold flex items-center gap-2">
+                  <span className="text-xs bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">Official</span>
+                  Meta WhatsApp Cloud API
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Get a Phone Number ID + Access Token from{" "}
+                  <a href="https://developers.facebook.com" target="_blank" rel="noreferrer" className="text-primary underline">
+                    developers.facebook.com
+                  </a>
+                  . Free up to 1,000 conversations/month. Supports multiple recipients.
+                </p>
+              </div>
+              <Switch checked={cloudEnabled} onCheckedChange={setCloudEnabled} />
+            </div>
+
+            <div className={`space-y-4 transition-opacity duration-200 ${!cloudEnabled ? "opacity-50 pointer-events-none" : ""}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Phone Number ID</Label>
+                  <Input
+                    placeholder="123456789012345"
+                    value={cloudPhoneNumberId}
+                    onChange={e => setCloudPhoneNumberId(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Access Token</Label>
+                  <Input
+                    type="password"
+                    placeholder="EAAxxxxxxxx..."
+                    value={cloudAccessToken}
+                    onChange={e => setCloudAccessToken(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Recipient Numbers (comma-separated, E.164 without +)</Label>
+                <Input
+                  placeholder="2547XXXXXXXX, 2348XXXXXXXX"
+                  value={cloudRecipients}
+                  onChange={e => setCloudRecipients(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground">Numbers must have opted in or be in your approved contacts.</p>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <Button variant="secondary" className="flex-1" onClick={handleTestCloud} disabled={cloudTesting || !cloudPhoneNumberId || !cloudAccessToken}>
+                  {cloudTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Test
+                </Button>
+                <Button className="flex-1" onClick={handleSaveCloud} disabled={cloudSaving}>
+                  {cloudSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── CallMeBot ────────────────────────────────────────────────── */}
+          <div className="space-y-4 p-5 bg-black/30 rounded-xl border border-white/5">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-white font-semibold flex items-center gap-2">
+                  <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded-full">Free</span>
+                  CallMeBot API
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Personal numbers only. Setup in 60 seconds — no Meta account needed.
+                  Send <span className="font-mono text-white/70">"I allow callmebot to send me messages"</span> on WhatsApp to{" "}
+                  <span className="font-mono text-white/70">+34 644 59 11 51</span>, then paste the API key you receive below.
+                </p>
+              </div>
+              <Switch checked={botEnabled} onCheckedChange={setBotEnabled} />
+            </div>
+
+            <div className={`space-y-4 transition-opacity duration-200 ${!botEnabled ? "opacity-50 pointer-events-none" : ""}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Your WhatsApp Number (E.164 without +)</Label>
+                  <Input
+                    placeholder="2547XXXXXXXX"
+                    value={botPhone}
+                    onChange={e => setBotPhone(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm">CallMeBot API Key</Label>
+                  <Input
+                    type="password"
+                    placeholder="1234567"
+                    value={botApiKey}
+                    onChange={e => setBotApiKey(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 pt-1">
+                <Button variant="secondary" className="flex-1" onClick={handleTestBot} disabled={botTesting || !botPhone || !botApiKey}>
+                  {botTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
+                  Test
+                </Button>
+                <Button className="flex-1" onClick={handleSaveBot} disabled={botSaving}>
+                  {botSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+                  Save
+                </Button>
+              </div>
+            </div>
+          </div>
+
+        </CardContent>
+      </Card>
+
       <InstallTab />
     </AppLayout>
   );
