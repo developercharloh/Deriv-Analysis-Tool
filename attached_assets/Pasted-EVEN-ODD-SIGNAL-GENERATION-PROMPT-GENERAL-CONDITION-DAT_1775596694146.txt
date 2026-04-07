@@ -1,0 +1,85 @@
+EVEN & ODD SIGNAL GENERATION PROMPT
+
+GENERAL CONDITION (DATA BASIS)
+
+All percentage calculations must be based on the last 1000 ticks.
+
+Important: The following core rules must be fully satisfied before any other conditions are considered. If these are not met, no Even or Odd market signals should be generated.
+
+
+---
+
+EVEN MARKET CONDITIONS
+
+For an Even market signal to be generated, all the following core conditions must first be satisfied:
+
+1. The most appearing digit (green bar), the second most appearing digit (blue bar), and the least appearing digit (red bar) must all belong to the even digits category (0, 2, 4, 6, 8).
+
+
+2. There must be at least three additional even digits, excluding the green bar, and each must have a percentage greater than 10%, based on the last 1000 ticks.
+
+
+3. The most appearing digit (green bar) must have a percentage greater than 11.5%, also based on the last 1000 ticks, confirming strong dominance.
+
+
+
+> Note: The least appearing digit (red bar) has no percentage requirement, only that it belongs to the even digits group.
+
+
+
+Only when all these conditions are fully satisfied should other analysis or entry rules be applied.
+
+
+---
+
+ODD MARKET CONDITIONS (VICE VERSA)
+
+For an Odd market signal, the reverse core conditions must be satisfied:
+
+1. The most appearing digit (green bar), the second most appearing digit (blue bar), and the least appearing digit (red bar) must all belong to the odd digits category (1, 3, 5, 7, 9).
+
+
+2. There must be at least three additional odd digits, excluding the green bar, and each must have a percentage greater than 10%, based on the last 1000 ticks.
+
+
+3. The most appearing digit (green bar) must have a percentage greater than 11.5%, based on the last 1000 ticks.
+
+
+
+> Note: The least appearing digit (red bar) has no percentage requirement, only that it belongs to the odd digits group.
+
+
+
+These core conditions must be met first; otherwise, no Odd signals are generated.
+
+
+---
+
+ENTRY POINT RULE
+
+Once the core conditions are satisfied:
+
+Odd market entry:
+When the market prints two consecutive even digits, enter an Odd trade.
+
+Even market entry (vice versa):
+When the market prints two consecutive odd digits, enter an Even trade.
+
+
+---
+
+FINAL LOGIC SUMMARY
+
+All percentages → based on last 1000 ticks
+
+Green bar → must align with market and be > 11.5%
+
+Blue bar → must align with market
+
+Red bar → must align with market (no % condition)
+
+At least 3 additional digits → must align and each be > 10%
+
+Entry trigger → 2 consecutive opposite digits
+
+Core conditions must be met first; otherwise, no signal is generated
