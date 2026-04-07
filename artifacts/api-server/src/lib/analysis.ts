@@ -1470,6 +1470,7 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         if (!ensmOk)    blocked.push(`Ensemble/model score too low (${(ensmScore * 100).toFixed(1)}%)`);
         if (streakOk === false) blocked.push(`Insufficient streak (${streakN})`);
         if (barFound === false) blocked.push("No valid barrier found (individual digits do not support entry)");
+        if (dominantPosOk === false) blocked.push("PRIMARY CONDITION FAILED: rank-1 & rank-2 digits not ≥2 places from barrier");
         if (loseOk === false)   blocked.push("Hot losing-side digit detected (>10%)");
         if (strOk === false)    blocked.push("1k-tick strength guard failed");
         if (recOk === false)    blocked.push("Recency guard failed (last 25/10 ticks reversed)");
@@ -1479,7 +1480,8 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         const overall = cdOk && minOk && (!["EVEN","ODD"].includes(type) || (entropyOk && !drift)) &&
           (!["OVER","UNDER","RISE","FALL"].includes(type) || (!anomaly && entropyOk)) &&
           (!["MATCHES","DIFFERS"].includes(type) || !anomaly) &&
-          ensmOk && (streakOk !== false) && (barFound !== false) && (loseOk !== false) &&
+          ensmOk && (streakOk !== false) && (barFound !== false) &&
+          (dominantPosOk !== false) && (loseOk !== false) &&
           (strOk !== false) && (recOk !== false) && wOk && pSimOk;
 
         return {
