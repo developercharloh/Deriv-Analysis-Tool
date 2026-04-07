@@ -45,7 +45,10 @@ export function isWhatsAppConnected(): boolean {
 // ── Send message ──────────────────────────────────────────────────────────────
 /**
  * Send a text message to one or more JIDs.
- * jids can be personal (@s.whatsapp.net) or group (@g.us).
+ * Supports:
+ *   personal chats  → @s.whatsapp.net
+ *   groups          → @g.us
+ *   channels        → @newsletter  (linked account must be channel admin/owner)
  */
 export async function sendWhatsAppMessage(jids: string[], text: string): Promise<{ sent: number; failed: number }> {
   if (!sock || currentStatus !== "connected") {
@@ -58,7 +61,12 @@ export async function sendWhatsAppMessage(jids: string[], text: string): Promise
 
   for (const jid of jids) {
     try {
-      await sock.sendMessage(jid, { text });
+      if (jid.endsWith("@newsletter")) {
+        // Channels require the newsletter send method
+        await (sock as any).newsletterSendMessage(jid, { text });
+      } else {
+        await sock.sendMessage(jid, { text });
+      }
       sent++;
       logger.info({ jid }, "WhatsApp message sent");
     } catch (err) {
@@ -80,7 +88,6 @@ export async function resolveGroupInvite(inviteLink: string): Promise<string | n
   }
 
   try {
-    // Extract the invite code from the link
     const match = inviteLink.match(/chat\.whatsapp\.com\/([A-Za-z0-9]+)/);
     if (!match) throw new Error("Invalid invite link format");
     const inviteCode = match[1];
@@ -89,6 +96,31 @@ export async function resolveGroupInvite(inviteLink: string): Promise<string | n
     return info.id;
   } catch (err) {
     logger.error({ err, inviteLink }, "Failed to resolve group invite");
+    throw err;
+  }
+}
+
+/**
+ * Resolve a WhatsApp Channel invite link (e.g. https://whatsapp.com/channel/XXXX)
+ * to a newsletter JID (@newsletter).
+ * The linked account must be the channel owner/admin to post to it.
+ */
+export async function resolveChannelInvite(inviteLink: string): Promise<string | null> {
+  if (!sock || currentStatus !== "connected") {
+    throw new Error("WhatsApp not connected — scan QR code first");
+  }
+
+  try {
+    // Channel links: https://whatsapp.com/channel/XXXX or https://www.whatsapp.com/channel/XXXX
+    const match = inviteLink.match(/whatsapp\.com\/channel\/([A-Za-z0-9_-]+)/i);
+    if (!match) throw new Error("Invalid channel link format — expected https://whatsapp.com/channel/...");
+    const inviteCode = match[1];
+
+    const info = await (sock as any).newsletterMetadata("invite", inviteCode);
+    logger.info({ channelName: info?.name, jid: info?.id }, "Channel resolved");
+    return info?.id ?? null;
+  } catch (err) {
+    logger.error({ err, inviteLink }, "Failed to resolve channel invite");
     throw err;
   }
 }

@@ -6,6 +6,7 @@ import {
   getWhatsAppQR,
   isWhatsAppConnected,
   resolveGroupInvite,
+  resolveChannelInvite,
   sendWhatsAppMessage,
   refreshQR,
   resetSession,
@@ -44,7 +45,7 @@ router.post("/whatsapp/reset-session", async (_req: Request, res: Response) => {
   }
 });
 
-/** POST /api/whatsapp/resolve-group — resolve invite link → JID */
+/** POST /api/whatsapp/resolve-group — resolve group invite link → JID */
 router.post("/whatsapp/resolve-group", async (req: Request, res: Response) => {
   try {
     const { inviteLink } = req.body as { inviteLink?: string };
@@ -53,6 +54,21 @@ router.post("/whatsapp/resolve-group", async (req: Request, res: Response) => {
       return;
     }
     const jid = await resolveGroupInvite(inviteLink);
+    res.json({ success: true, jid });
+  } catch (err) {
+    res.status(500).json({ success: false, message: String(err) });
+  }
+});
+
+/** POST /api/whatsapp/resolve-channel — resolve channel invite link → newsletter JID */
+router.post("/whatsapp/resolve-channel", async (req: Request, res: Response) => {
+  try {
+    const { inviteLink } = req.body as { inviteLink?: string };
+    if (!inviteLink) {
+      res.status(400).json({ success: false, message: "inviteLink is required" });
+      return;
+    }
+    const jid = await resolveChannelInvite(inviteLink);
     res.json({ success: true, jid });
   } catch (err) {
     res.status(500).json({ success: false, message: String(err) });

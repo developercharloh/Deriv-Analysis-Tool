@@ -44,11 +44,13 @@ export function Settings() {
   const [waEnabled, setWaEnabled] = useState(false);
   const [waTargetJids, setWaTargetJids] = useState("");
   const [waInviteLink, setWaInviteLink] = useState("");
+  const [waChannelLink, setWaChannelLink] = useState("");
   const [waSaving, setWaSaving] = useState(false);
   const [waTesting, setWaTesting] = useState(false);
   const [waRefreshing, setWaRefreshing] = useState(false);
   const [waResetting, setWaResetting] = useState(false);
   const [waResolving, setWaResolving] = useState(false);
+  const [waResolvingChannel, setWaResolvingChannel] = useState(false);
 
   // WhatsApp — Meta Cloud API
   const [cloudEnabled, setCloudEnabled] = useState(false);
