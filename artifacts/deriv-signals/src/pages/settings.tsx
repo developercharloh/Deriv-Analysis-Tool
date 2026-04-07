@@ -110,6 +110,16 @@ export function Settings() {
     } finally { setTimeout(() => setWaRefreshing(false), 2000); }
   };
 
+  const handleResetSession = async () => {
+    setWaResetting(true);
+    try {
+      await fetch("/api/whatsapp/reset-session", { method: "POST" });
+      toast({ title: "Session reset", description: "Credentials cleared. A fresh QR code is generating — scan it with WhatsApp." });
+    } catch {
+      toast({ title: "Error", description: "Failed to reset session.", variant: "destructive" });
+    } finally { setTimeout(() => setWaResetting(false), 3000); }
+  };
+
   const handleResolveGroup = async () => {
     if (!waInviteLink.trim()) return;
     setWaResolving(true);
@@ -562,19 +572,32 @@ export function Settings() {
                   </p>
                   <img src={waQR} alt="WhatsApp QR Code" className="w-56 h-56 rounded-xl" />
                   <p className="text-xs text-muted-foreground text-center">Open WhatsApp → Linked Devices → Link a Device → Scan</p>
-                  <Button variant="outline" size="sm" onClick={handleRefreshQR} disabled={waRefreshing}>
-                    {waRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                    New QR Code
-                  </Button>
+                  <div className="flex gap-2 mt-1">
+                    <Button variant="outline" size="sm" onClick={handleRefreshQR} disabled={waRefreshing || waResetting}>
+                      {waRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                      New QR
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleResetSession} disabled={waResetting || waRefreshing}>
+                      {waResetting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                      Reset Session
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center">If linking fails with "device couldn't link", tap Reset Session.</p>
                 </div>
               ) : (
                 <div className="flex flex-col items-center gap-3 p-6 bg-black/40 border border-white/10 rounded-xl">
                   <WifiOff className="w-10 h-10 text-muted-foreground" />
                   <p className="text-muted-foreground text-sm text-center">Not connected. Enable WhatsApp alerts and a QR code will appear here.</p>
-                  <Button variant="outline" size="sm" onClick={handleRefreshQR} disabled={waRefreshing}>
-                    {waRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <QrCode className="w-4 h-4 mr-2" />}
-                    Generate QR Code
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={handleRefreshQR} disabled={waRefreshing || waResetting}>
+                      {waRefreshing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <QrCode className="w-4 h-4 mr-2" />}
+                      Generate QR
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={handleResetSession} disabled={waResetting || waRefreshing}>
+                      {waResetting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RotateCcw className="w-4 h-4 mr-2" />}
+                      Reset Session
+                    </Button>
+                  </div>
                 </div>
               )}
             </div>
