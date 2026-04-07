@@ -552,16 +552,17 @@ function losingDigitsBelowThreshold(
 }
 
 // ─── EVEN / ODD STRENGTH GUARD ───────────────────────────────────────────────
-// Four extra conditions evaluated against the last 1 000 ticks before an
-// EVEN or ODD signal is allowed to fire:
+// All conditions evaluated against the last 1 000 ticks.
+// All three must pass before any other analysis is applied.
 //
-//   1. The single most-appearing digit must belong to the signal side AND
-//      must have a frequency ≥ 12 %.
-//   2. At least 3 OTHER digits on the signal side must each exceed 10.5 %.
-//   3. The second-most-appearing digit overall must be among those 3.
-//   4. The least-appearing digit overall must belong to the signal side.
+//   1. Green bar (most appearing), Blue bar (2nd most appearing), AND
+//      Red bar (least appearing) must ALL belong to the signal side.
+//      Red bar has no percentage requirement — membership only.
+//   2. Green bar (most appearing) must have a frequency > 11.5 %.
+//   3. At least 3 OTHER signal-side digits (excluding the green bar) must
+//      each have a frequency > 10 %.
 //
-// All four must pass; any failure blocks the signal.
+// All conditions must pass; any failure blocks the signal.
 function checkEvenOddStrength(
   freqs1k: number[],     // 10-element pct array from last 1 000 ticks (values 0–100)
   side: "EVEN" | "ODD",
@@ -572,56 +573,51 @@ function checkEvenOddStrength(
   const ranked = Array.from({ length: 10 }, (_, d) => d)
     .sort((a, b) => freqs1k[b] - freqs1k[a]);
 
-  const mostAppearing  = ranked[0];
-  const secondMost     = ranked[1];
-  const leastAppearing = ranked[9];
+  const mostAppearing  = ranked[0]; // green bar
+  const secondMost     = ranked[1]; // blue bar
+  const leastAppearing = ranked[9]; // red bar
 
-  // 1. Most-appearing digit is on the signal side AND ≥ 12 %
-  if (!sideDigits.includes(mostAppearing) || freqs1k[mostAppearing] < 12) return false;
+  // 1. Green bar must be on signal side AND > 11.5 %
+  if (!sideDigits.includes(mostAppearing) || freqs1k[mostAppearing] <= 11.5) return false;
 
-  // 4. Least-appearing digit is on the signal side
+  // 2. Blue bar (2nd most) must be on signal side (no % requirement)
+  if (!sideDigits.includes(secondMost)) return false;
+
+  // 3. Red bar (least appearing) must be on signal side (no % requirement)
   if (!sideDigits.includes(leastAppearing)) return false;
 
-  // 2 & 3. At least 3 OTHER side-digits above 10.5 %, one being the 2nd-most overall
-  const othersAbove = sideDigits.filter(d => d !== mostAppearing && freqs1k[d] > 10.5);
+  // 4. At least 3 OTHER signal-side digits (excl. green bar) each > 10 %
+  const othersAbove = sideDigits.filter(d => d !== mostAppearing && freqs1k[d] > 10);
   if (othersAbove.length < 3) return false;
-  if (!othersAbove.includes(secondMost)) return false;
 
   return true;
 }
 
-// ─── EVEN / ODD RECENCY CONFIRMATION ─────────────────────────────────────────
-// The 1 000-tick strength guard proves the long-term pattern exists.
-// This guard proves the pattern is STILL ACTIVE right now.
+// ─── EVEN / ODD ENTRY TRIGGER ─────────────────────────────────────────────────
+// Entry timing rule: a signal fires only when the last 2 consecutive ticks
+// printed digits from the OPPOSITE side.
 //
-// Rules (evaluated on the last 25 ticks):
-//   A. At least 60 % of those ticks must land on the signal side.
-//   B. The last 10 ticks must also favour the signal side (≥ 6 of 10).
+//   EVEN signal → last 2 ticks must be ODD  digits (1, 3, 5, 7, 9)
+//   ODD  signal → last 2 ticks must be EVEN digits (0, 2, 4, 6, 8)
 //
-// If either fails the signal is blocked — the market has recently reversed
-// even though the long-term numbers still look good.
+// Rationale: the market has just printed two opposite digits in a row,
+// suggesting a brief deviation that is likely to revert to the dominant side.
 function checkEvenOddRecency(
   ticks: DerivTick[],
   side: "EVEN" | "ODD",
 ): boolean {
-  if (ticks.length < 25) return false;
+  if (ticks.length < 2) return false;
 
-  const isOnSide = (t: DerivTick) => {
-    const d = t.lastDigit ?? (Math.round(t.price * 10) % 10);
-    return side === "EVEN" ? d % 2 === 0 : d % 2 !== 0;
+  const getDigit = (t: DerivTick) => t.lastDigit ?? (Math.round(t.price * 10) % 10);
+
+  // The two most-recent ticks must both be from the OPPOSITE side
+  const isOpposite = (t: DerivTick) => {
+    const d = getDigit(t);
+    return side === "EVEN" ? d % 2 !== 0 : d % 2 === 0;
   };
 
-  // Rule A: last 25 ticks — signal side ≥ 60 % (15 of 25)
-  const last25 = ticks.slice(-25);
-  const onSide25 = last25.filter(isOnSide).length;
-  if (onSide25 < 15) return false;
-
-  // Rule B: last 10 ticks — signal side ≥ 6 of 10
-  const last10 = ticks.slice(-10);
-  const onSide10 = last10.filter(isOnSide).length;
-  if (onSide10 < 6) return false;
-
-  return true;
+  const last2 = ticks.slice(-2);
+  return last2.every(isOpposite);
 }
 
 // ─── OPTIMAL OVER / UNDER BARRIER SELECTION ──────────────────────────────────
@@ -1556,7 +1552,7 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
         if (noTiesOkGate === false)   blocked.push("Tied digit frequencies detected — market not stable enough");
         if (loseOk === false)   blocked.push("Hot losing-side digit detected (≥10.2%)");
         if (strOk === false)    blocked.push("1k-tick strength guard failed");
-        if (recOk === false)    blocked.push("Recency guard failed (last 25/10 ticks reversed)");
+        if (recOk === false)    blocked.push("Entry trigger not met (last 2 ticks not both opposite side)");
         if (!wOk)       blocked.push(`Window confluence too low (${wCount}/${wRequired} windows)`);
         if (!pSimOk)    blocked.push(pSim ? `Profit sim failed (WR ${(pSim.winRate * 100).toFixed(1)}% < ${(pSim.threshold * 100).toFixed(0)}%)` : "Profit sim N/A");
 
