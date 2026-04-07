@@ -1,0 +1,40 @@
+{
+  "name": "Elite Signals",
+  "short_name": "Elite Signals",
+  "description": "Real-time trading signals — enter once, trade always",
+  "start_url": "./access",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0b1023",
+  "background_color": "#0b1023",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Signal Feed",
+      "short_name": "Feed",
+      "url": "./subscriber",
+      "icons": [{ "src": "./icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

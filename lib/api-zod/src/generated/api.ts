@@ -14,3 +14,75 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Returns a list of recently generated signals
+ * @summary Get signal history
+ */
+export const getSignalsQueryLimitDefault = 50;
+
+export const GetSignalsQueryParams = zod.object({
+  limit: zod.coerce.number().default(getSignalsQueryLimitDefault),
+});
+
+export const GetSignalsResponseItem = zod.object({
+  id: zod.number(),
+  market: zod.string(),
+  symbol: zod.string(),
+  digit: zod.number(),
+  price: zod.number(),
+  signalType: zod.enum(["OVER", "UNDER", "EVEN", "ODD", "RISE", "FALL"]),
+  confidence: zod.enum(["LOW", "MEDIUM", "HIGH"]),
+  createdAt: zod.date(),
+});
+export const GetSignalsResponse = zod.array(GetSignalsResponseItem);
+
+/**
+ * @summary Get bot settings
+ */
+export const GetSettingsResponse = zod.object({
+  id: zod.number(),
+  telegramBotToken: zod.string().nullish(),
+  telegramChatId: zod.string().nullish(),
+  enableTelegram: zod.boolean(),
+  selectedMarkets: zod.array(zod.string()),
+  signalTypes: zod.array(zod.string()),
+  minConfidence: zod.enum(["LOW", "MEDIUM", "HIGH"]),
+  isRunning: zod.boolean(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Update bot settings
+ */
+export const UpdateSettingsBody = zod.object({
+  telegramBotToken: zod.string().nullish(),
+  telegramChatId: zod.string().nullish(),
+  enableTelegram: zod.boolean().optional(),
+  selectedMarkets: zod.array(zod.string()).optional(),
+  signalTypes: zod.array(zod.string()).optional(),
+  minConfidence: zod.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+  isRunning: zod.boolean().optional(),
+});
+
+export const UpdateSettingsResponse = zod.object({
+  id: zod.number(),
+  telegramBotToken: zod.string().nullish(),
+  telegramChatId: zod.string().nullish(),
+  enableTelegram: zod.boolean(),
+  selectedMarkets: zod.array(zod.string()),
+  signalTypes: zod.array(zod.string()),
+  minConfidence: zod.enum(["LOW", "MEDIUM", "HIGH"]),
+  isRunning: zod.boolean(),
+  createdAt: zod.date(),
+  updatedAt: zod.date(),
+});
+
+/**
+ * @summary Send a test Telegram message
+ */
+export const TestTelegramResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string(),
+});

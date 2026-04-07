@@ -6,4 +6,13 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./botSettings";
+export * from "./botSettingsInput";
+export * from "./botSettingsInputMinConfidence";
+export * from "./botSettingsMinConfidence";
+export * from "./getSignalsParams";
 export * from "./healthStatus";
+export * from "./signal";
+export * from "./signalConfidence";
+export * from "./signalSignalType";
+export * from "./testResult";

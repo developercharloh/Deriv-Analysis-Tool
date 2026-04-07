@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Deriv Signal Generator"
+version = "1.0.0"
+id = "artifacts/deriv-signals"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19951
+
+[services.development]
+run = "pnpm --filter @workspace/deriv-signals run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/deriv-signals", "run", "build" ]
+publicDir = "artifacts/deriv-signals/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19951"
+BASE_PATH = "/"

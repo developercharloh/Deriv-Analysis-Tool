@@ -10,6 +10,10 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: signals
+    description: Signal operations
+  - name: settings
+    description: Settings operations
 paths:
   /healthz:
     get:
@@ -24,6 +28,73 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /signals:
+    get:
+      operationId: getSignals
+      tags: [signals]
+      summary: Get signal history
+      description: Returns a list of recently generated signals
+      parameters:
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: List of signals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Signal"
+
+  /settings:
+    get:
+      operationId: getSettings
+      tags: [settings]
+      summary: Get bot settings
+      responses:
+        "200":
+          description: Current settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotSettings"
+    put:
+      operationId: updateSettings
+      tags: [settings]
+      summary: Update bot settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BotSettingsInput"
+      responses:
+        "200":
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BotSettings"
+
+  /settings/test-telegram:
+    post:
+      operationId: testTelegram
+      tags: [settings]
+      summary: Send a test Telegram message
+      responses:
+        "200":
+          description: Result of test message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestResult"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +105,112 @@ components:
       required:
         - status
 
+    Signal:
+      type: object
+      properties:
+        id:
+          type: integer
+        market:
+          type: string
+        symbol:
+          type: string
+        digit:
+          type: integer
+        price:
+          type: number
+        signalType:
+          type: string
+          enum: [OVER, UNDER, EVEN, ODD, RISE, FALL]
+        confidence:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - market
+        - symbol
+        - digit
+        - price
+        - signalType
+        - confidence
+        - createdAt
+
+    BotSettings:
+      type: object
+      properties:
+        id:
+          type: integer
+        telegramBotToken:
+          type: string
+          nullable: true
+        telegramChatId:
+          type: string
+          nullable: true
+        enableTelegram:
+          type: boolean
+        selectedMarkets:
+          type: array
+          items:
+            type: string
+        signalTypes:
+          type: array
+          items:
+            type: string
+        minConfidence:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        isRunning:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - enableTelegram
+        - selectedMarkets
+        - signalTypes
+        - minConfidence
+        - isRunning
+        - createdAt
+        - updatedAt
+
+    BotSettingsInput:
+      type: object
+      properties:
+        telegramBotToken:
+          type: string
+          nullable: true
+        telegramChatId:
+          type: string
+          nullable: true
+        enableTelegram:
+          type: boolean
+        selectedMarkets:
+          type: array
+          items:
+            type: string
+        signalTypes:
+          type: array
+          items:
+            type: string
+        minConfidence:
+          type: string
+          enum: [LOW, MEDIUM, HIGH]
+        isRunning:
+          type: boolean
+
+    TestResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message

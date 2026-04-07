@@ -8,3 +8,89 @@
 export interface HealthStatus {
   status: string;
 }
+
+export type SignalSignalType =
+  (typeof SignalSignalType)[keyof typeof SignalSignalType];
+
+export const SignalSignalType = {
+  OVER: "OVER",
+  UNDER: "UNDER",
+  EVEN: "EVEN",
+  ODD: "ODD",
+  RISE: "RISE",
+  FALL: "FALL",
+  MATCHES: "MATCHES",
+  DIFFERS: "DIFFERS",
+} as const;
+
+export type SignalConfidence =
+  (typeof SignalConfidence)[keyof typeof SignalConfidence];
+
+export const SignalConfidence = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const;
+
+export interface Signal {
+  id: number;
+  market: string;
+  symbol: string;
+  digit: number;
+  price: number;
+  signalType: SignalSignalType;
+  confidence: SignalConfidence;
+  predictionDigit?: number | null;
+  entryDigit?: number | null;
+  createdAt: string;
+}
+
+export type BotSettingsMinConfidence =
+  (typeof BotSettingsMinConfidence)[keyof typeof BotSettingsMinConfidence];
+
+export const BotSettingsMinConfidence = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const;
+
+export interface BotSettings {
+  id: number;
+  telegramBotToken?: string | null;
+  telegramChatId?: string | null;
+  enableTelegram: boolean;
+  selectedMarkets: string[];
+  signalTypes: string[];
+  minConfidence: BotSettingsMinConfidence;
+  isRunning: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BotSettingsInputMinConfidence =
+  (typeof BotSettingsInputMinConfidence)[keyof typeof BotSettingsInputMinConfidence];
+
+export const BotSettingsInputMinConfidence = {
+  LOW: "LOW",
+  MEDIUM: "MEDIUM",
+  HIGH: "HIGH",
+} as const;
+
+export interface BotSettingsInput {
+  telegramBotToken?: string | null;
+  telegramChatId?: string | null;
+  enableTelegram?: boolean;
+  selectedMarkets?: string[];
+  signalTypes?: string[];
+  minConfidence?: BotSettingsInputMinConfidence;
+  isRunning?: boolean;
+}
+
+export interface TestResult {
+  success: boolean;
+  message: string;
+}
+
+export type GetSignalsParams = {
+  limit?: number;
+};

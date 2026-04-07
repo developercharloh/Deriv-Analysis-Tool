@@ -54,6 +54,8 @@ async function buildAll() {
       "knex",
       "typeorm",
       "protobufjs",
+      "@whiskeysockets/baileys",
+      "@hapi/boom",
       "onnxruntime-node",
       "@tensorflow/*",
       "@prisma/client",
