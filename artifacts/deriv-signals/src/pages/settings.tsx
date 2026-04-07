@@ -741,6 +741,28 @@ export function Settings() {
                 <p className="text-xs text-muted-foreground">Must be connected to resolve a group link. The JID is automatically added above.</p>
               </div>
 
+              {/* Resolve channel invite link */}
+              <div className="space-y-2">
+                <Label className="text-sm text-white">Add Channel via Invite Link</Label>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://whatsapp.com/channel/..."
+                    value={waChannelLink}
+                    onChange={(e) => setWaChannelLink(e.target.value)}
+                    disabled={waStatus !== "connected"}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleResolveChannel}
+                    disabled={!waChannelLink.trim() || waStatus !== "connected" || waResolvingChannel}
+                  >
+                    {waResolvingChannel ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link className="w-4 h-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Your linked account must be the channel owner/admin. Go to your channel → Invite via link → copy and paste here.</p>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <Button variant="secondary" className="flex-1" onClick={handleTestWhatsApp} disabled={waStatus !== "connected" || waTesting}>
                   {waTesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Send className="w-4 h-4 mr-2" />}
