@@ -10,6 +10,8 @@ import {
   refreshQR,
   resetSession,
 } from "../lib/whatsapp.js";
+import { sendViaCloudAPI } from "../lib/whatsapp-cloud.js";
+import { sendViaCallMeBot } from "../lib/callmebot.js";
 
 const router: IRouter = Router();
 
