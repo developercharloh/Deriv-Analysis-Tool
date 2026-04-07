@@ -13,14 +13,13 @@ type TickHandler = (tick: DerivTick) => void;
 const DERIV_WS_URL = "wss://ws.deriv.com/websockets/v3?app_id=1089";
 
 const MARKET_NAMES: Record<string, string> = {
-  R_10: "Volatility 10",
-  R_25: "Volatility 25",
-  R_50: "Volatility 50",
-  R_75: "Volatility 75",
+  // Standard Volatility Indices
+  R_10:  "Volatility 10",
+  R_25:  "Volatility 25",
+  R_50:  "Volatility 50",
+  R_75:  "Volatility 75",
   R_100: "Volatility 100",
-  RDBULL: "Boom 1000",
-  RDBEAR: "Crash 1000",
-  stpRNG: "Step Index",
+  // Volatility 1s Indices
   "1HZ10V":  "Volatility 10 (1s)",
   "1HZ15V":  "Volatility 15 (1s)",
   "1HZ25V":  "Volatility 25 (1s)",
@@ -29,11 +28,22 @@ const MARKET_NAMES: Record<string, string> = {
   "1HZ75V":  "Volatility 75 (1s)",
   "1HZ90V":  "Volatility 90 (1s)",
   "1HZ100V": "Volatility 100 (1s)",
-  "JD10":    "Jump 10 Index",
-  "JD25":    "Jump 25 Index",
-  "JD50":    "Jump 50 Index",
-  "JD75":    "Jump 75 Index",
-  "JD100":   "Jump 100 Index",
+  // Jump Indices
+  "JD10":  "Jump 10 Index",
+  "JD25":  "Jump 25 Index",
+  "JD50":  "Jump 50 Index",
+  "JD75":  "Jump 75 Index",
+  "JD100": "Jump 100 Index",
+  // Boom Indices
+  BOOM300:  "Boom 300 Index",
+  BOOM500:  "Boom 500 Index",
+  BOOM1000: "Boom 1000 Index",
+  // Crash Indices
+  CRASH300:  "Crash 300 Index",
+  CRASH500:  "Crash 500 Index",
+  CRASH1000: "Crash 1000 Index",
+  // Step Index (Flat)
+  stpRNG: "Step Index",
 };
 
 export function getMarketName(symbol: string): string {

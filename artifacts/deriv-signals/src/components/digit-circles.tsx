@@ -9,18 +9,53 @@ import { Radio, TrendingUp, TrendingDown, ChevronDown } from "lucide-react";
 const DERIV_WS = "wss://ws.binaryws.com/websockets/v3?app_id=1";
 const TICK_HISTORY_COUNT = 1000;
 
-const VOLATILITY_MARKETS = [
-  { symbol: "1HZ10V",  label: "Volatility 10 (1s)",  short: "Vol 10 (1s)"  },
-  { symbol: "1HZ25V",  label: "Volatility 25 (1s)",  short: "Vol 25 (1s)"  },
-  { symbol: "1HZ50V",  label: "Volatility 50 (1s)",  short: "Vol 50 (1s)"  },
-  { symbol: "1HZ75V",  label: "Volatility 75 (1s)",  short: "Vol 75 (1s)"  },
-  { symbol: "1HZ100V", label: "Volatility 100 (1s)", short: "Vol 100 (1s)" },
-  { symbol: "JD10",    label: "Jump 10 Index",        short: "Jump 10"      },
-  { symbol: "JD25",    label: "Jump 25 Index",        short: "Jump 25"      },
-  { symbol: "JD50",    label: "Jump 50 Index",        short: "Jump 50"      },
-  { symbol: "JD75",    label: "Jump 75 Index",        short: "Jump 75"      },
-  { symbol: "JD100",   label: "Jump 100 Index",       short: "Jump 100"     },
-];
+const MARKET_GROUPS = [
+  {
+    group: "Volatility 1s",
+    markets: [
+      { symbol: "1HZ10V",  label: "Volatility 10 (1s)",  short: "Vol 10"   },
+      { symbol: "1HZ25V",  label: "Volatility 25 (1s)",  short: "Vol 25"   },
+      { symbol: "1HZ50V",  label: "Volatility 50 (1s)",  short: "Vol 50"   },
+      { symbol: "1HZ75V",  label: "Volatility 75 (1s)",  short: "Vol 75"   },
+      { symbol: "1HZ100V", label: "Volatility 100 (1s)", short: "Vol 100"  },
+    ],
+  },
+  {
+    group: "Jump Indices",
+    markets: [
+      { symbol: "JD10",  label: "Jump 10 Index",  short: "Jump 10"  },
+      { symbol: "JD25",  label: "Jump 25 Index",  short: "Jump 25"  },
+      { symbol: "JD50",  label: "Jump 50 Index",  short: "Jump 50"  },
+      { symbol: "JD75",  label: "Jump 75 Index",  short: "Jump 75"  },
+      { symbol: "JD100", label: "Jump 100 Index", short: "Jump 100" },
+    ],
+  },
+  {
+    group: "Boom Indices",
+    markets: [
+      { symbol: "BOOM300",  label: "Boom 300 Index",  short: "Boom 300"  },
+      { symbol: "BOOM500",  label: "Boom 500 Index",  short: "Boom 500"  },
+      { symbol: "BOOM1000", label: "Boom 1000 Index", short: "Boom 1000" },
+    ],
+  },
+  {
+    group: "Crash Indices",
+    markets: [
+      { symbol: "CRASH300",  label: "Crash 300 Index",  short: "Crash 300"  },
+      { symbol: "CRASH500",  label: "Crash 500 Index",  short: "Crash 500"  },
+      { symbol: "CRASH1000", label: "Crash 1000 Index", short: "Crash 1000" },
+    ],
+  },
+  {
+    group: "Step Index",
+    markets: [
+      { symbol: "stpRNG", label: "Step Index", short: "Step" },
+    ],
+  },
+] as const;
+
+// Flat list used for indexing
+const VOLATILITY_MARKETS = MARKET_GROUPS.flatMap(g => g.markets);
 
 const SIGNAL_TYPES = [
   { id: "even-odd",        label: "Even / Odd",        color: "#7c3aed" },

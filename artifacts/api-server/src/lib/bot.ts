@@ -199,7 +199,7 @@ async function getOrCreateSettings() {
     .insert(botSettingsTable)
     .values({
       enableTelegram: false,
-      selectedMarkets: "1HZ10V,1HZ15V,1HZ25V,1HZ30V,1HZ50V,1HZ75V,1HZ90V,1HZ100V,JD10,JD25,JD50,JD75,JD100",
+      selectedMarkets: "1HZ10V,1HZ15V,1HZ25V,1HZ30V,1HZ50V,1HZ75V,1HZ90V,1HZ100V,JD10,JD25,JD50,JD75,JD100,BOOM300,BOOM500,BOOM1000,CRASH300,CRASH500,CRASH1000,stpRNG",
       signalTypes: "OVER,UNDER,EVEN,ODD,RISE,FALL,MATCHES,DIFFERS",
       minConfidence: "HIGH",
       isRunning: true,
