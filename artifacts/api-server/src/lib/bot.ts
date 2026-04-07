@@ -255,7 +255,8 @@ async function processTickForBot(tick: DerivTick): Promise<void> {
     const minConfIdx = confOrder.indexOf(minConf);
 
     const market = getMarketName(tick.symbol);
-    const signals = analyzeTickAndGenerateSignals(tick, market, enabledTypes);
+    const allSignals = analyzeTickAndGenerateSignals(tick, market, enabledTypes);
+    const signals = allSignals.filter(s => enabledTypes.includes(s.signalType));
 
     for (const signal of signals) {
       const sigConfIdx = confOrder.indexOf(signal.confidence);
