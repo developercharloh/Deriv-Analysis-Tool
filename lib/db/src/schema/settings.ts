@@ -17,9 +17,18 @@ export const botSettingsTable = pgTable("bot_settings", {
   preAlertMinutes: integer("pre_alert_minutes").default(2).notNull(),
   // Per-market bot labels (JSON: { "1HZ10V": "Bot name", ... })
   marketBots: text("market_bots"),
-  // WhatsApp integration
+  // WhatsApp — Baileys (QR-based)
   whatsappEnabled: boolean("whatsapp_enabled").default(false).notNull(),
   whatsappTargetJids: text("whatsapp_target_jids"),
+  // WhatsApp — Meta Cloud API (no QR)
+  waCloudEnabled: boolean("wa_cloud_enabled").default(false).notNull(),
+  waCloudPhoneNumberId: text("wa_cloud_phone_number_id"),
+  waCloudAccessToken: text("wa_cloud_access_token"),
+  waCloudRecipients: text("wa_cloud_recipients"), // comma-separated E.164 numbers e.g. 2547XXXXXXXX
+  // WhatsApp — CallMeBot (no QR, personal)
+  callmebotEnabled: boolean("callmebot_enabled").default(false).notNull(),
+  callmebotPhone: text("callmebot_phone"),
+  callmebotApiKey: text("callmebot_api_key"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
