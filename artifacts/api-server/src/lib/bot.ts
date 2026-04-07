@@ -353,6 +353,58 @@ async function syncSubscriptions(): Promise<void> {
 
 let syncInterval: NodeJS.Timeout | null = null;
 
+// ── OVER/UNDER live condition invalidator ──────────────────────────────────────
+// Runs every 30 s. For every pending OVER/UNDER signal still within its
+// validity window, re-checks the losing-side digit threshold (10.2 %).
+// If any losing digit has crossed the threshold the signal is cancelled,
+// removed from the Live Feed via SSE, and marked in the DB.
+function startOverUnderInvalidator(): void {
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const active = await db
+        .select()
+        .from(signalsTable)
+        .where(
+          and(
+            or(
+              eq(signalsTable.signalType, "OVER"),
+              eq(signalsTable.signalType, "UNDER"),
+            ),
+            eq(signalsTable.outcome, "pending"),
+            isNotNull(signalsTable.expiresAt),
+          ),
+        );
+
+      for (const sig of active) {
+        if (!sig.expiresAt || sig.expiresAt < now) continue; // already expired
+        if (sig.predictionDigit == null) continue;
+
+        const valid = isOverUnderConditionStillValid(
+          sig.symbol,
+          sig.signalType as "OVER" | "UNDER",
+          sig.predictionDigit,
+        );
+
+        if (!valid) {
+          await db
+            .update(signalsTable)
+            .set({ outcome: "cancelled" })
+            .where(eq(signalsTable.id, sig.id));
+
+          broadcastSignal({ type: "signal_cancelled", id: sig.id });
+          logger.info(
+            { id: sig.id, symbol: sig.symbol, type: sig.signalType, barrier: sig.predictionDigit },
+            "Signal cancelled — losing-side digit crossed 10.2% threshold",
+          );
+        }
+      }
+    } catch (err) {
+      logger.error({ err }, "OVER/UNDER invalidator error");
+    }
+  }, 30_000);
+}
+
 export async function startBot(): Promise<void> {
   let wsConnected = false;
   derivClient.connect();
