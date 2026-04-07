@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { Activity, BarChart3, Settings, RadioReceiver, Users, Bot, Cpu } from "lucide-react";
+import { Activity, BarChart3, Settings, RadioReceiver, Users, Bot, Cpu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
