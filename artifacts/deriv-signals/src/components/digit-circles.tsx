@@ -230,11 +230,10 @@ function StyledSelect({ value, onChange, options, accentColor = "#0ea5e9" }: {
    DigitCircle  — rank-based color, fully filled for top/bottom 2 ranks,
                   red ticker arrow when live digit matches
 ───────────────────────────────────────────────────────────────── */
-function DigitCircle({ digit, pct, isActive, rank, rankColor, signalType }: {
+function DigitCircle({ digit, pct, isActive, rank, rankColor }: {
   digit: number; pct: number; isActive: boolean;
-  rank: number; rankColor: string; signalType: SignalTypeId;
+  rank: number; rankColor: string;
 }) {
-  const tag = getDigitTag(digit, signalType);
   const highlighted = isHighlightedRank(rank);
 
   return (
@@ -259,17 +258,6 @@ function DigitCircle({ digit, pct, isActive, rank, rankColor, signalType }: {
         )}
       </AnimatePresence>
 
-      {/* Signal tag badge */}
-      {tag ? (
-        <span
-          className="text-[8px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded-md"
-          style={{ background: `${tag.color}18`, color: tag.color, border: `1px solid ${tag.color}35` }}
-        >
-          {tag.label}
-        </span>
-      ) : (
-        <span className="text-[8px] text-transparent select-none">M</span>
-      )}
 
       {/* Circle — highlighted ranks always fully solid; others semi */}
       <motion.div
@@ -319,9 +307,9 @@ function DigitCircle({ digit, pct, isActive, rank, rankColor, signalType }: {
 /* ─────────────────────────────────────────────────────────────────
    DigitRow  — no header section, compact gap
 ───────────────────────────────────────────────────────────────── */
-function DigitRow({ digits, distribution, liveDigit, rankMap, signalType }: {
+function DigitRow({ digits, distribution, liveDigit, rankMap }: {
   digits: number[]; distribution: number[]; liveDigit: number | null;
-  rankMap: Record<number, number>; signalType: SignalTypeId;
+  rankMap: Record<number, number>;
 }) {
   return (
     <div className="flex gap-2">
@@ -335,7 +323,6 @@ function DigitRow({ digits, distribution, liveDigit, rankMap, signalType }: {
             isActive={liveDigit === d}
             rank={rank}
             rankColor={getRankColor(rank)}
-            signalType={signalType}
           />
         );
       })}
@@ -491,7 +478,6 @@ function MarketDigitPanel({ symbol, signalType }: { symbol: string; signalType: 
         distribution={distribution}
         liveDigit={liveDigit}
         rankMap={rankMap}
-        signalType={signalType}
       />
 
       {/* Lower row: digits 5–9 */}
@@ -500,7 +486,6 @@ function MarketDigitPanel({ symbol, signalType }: { symbol: string; signalType: 
         distribution={distribution}
         liveDigit={liveDigit}
         rankMap={rankMap}
-        signalType={signalType}
       />
 
       {/* Rank legend */}
