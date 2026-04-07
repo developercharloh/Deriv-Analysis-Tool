@@ -111,16 +111,19 @@ function SidebarBottom() {
   );
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+function SidebarContent({ onNavClick }: { onNavClick?: () => void }) {
   const [location] = useLocation();
   return (
-    <aside className="w-64 h-screen hidden md:flex flex-col flex-shrink-0 z-50 fixed left-0 top-0"
-      style={{ background: "rgba(8,12,32,0.94)", backdropFilter: "blur(24px)", borderRight: "1px solid rgba(79,195,247,0.12)", boxShadow: "4px 0 32px rgba(14,165,233,0.10)" }}>
-
+    <>
       {/* Logo */}
       <div className="h-20 flex items-center px-6 border-b border-sky-100"
         style={{ background: "linear-gradient(135deg,rgba(14,165,233,0.05) 0%,transparent 70%)" }}>
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/" onClick={onNavClick} className="flex items-center gap-3 group">
           <img src="/logo.png" alt="Elite Signals" className="w-10 h-10 rounded-xl object-contain shadow-md shadow-sky-200/60 group-hover:shadow-sky-300/70 transition-all duration-300" />
           <span className="font-display font-bold text-lg tracking-wide text-slate-800">
             Elite<br />
@@ -142,7 +145,7 @@ export function Sidebar() {
         {navItems.map((item) => {
           const isActive = location === item.path;
           return (
-            <Link key={item.path} href={item.path} className="relative outline-none">
+            <Link key={item.path} href={item.path} onClick={onNavClick} className="relative outline-none">
               <div className={cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 relative z-10",
                 isActive ? "text-slate-800" : "text-slate-500 hover:text-slate-700 hover:bg-sky-50/60"
@@ -167,6 +170,59 @@ export function Sidebar() {
       </nav>
 
       <SidebarBottom />
-    </aside>
+    </>
+  );
+}
+
+export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
+  return (
+    <>
+      {/* ── Desktop sidebar (always visible ≥ md) ── */}
+      <aside className="w-64 h-screen hidden md:flex flex-col flex-shrink-0 z-50 fixed left-0 top-0"
+        style={{ background: "rgba(8,12,32,0.94)", backdropFilter: "blur(24px)", borderRight: "1px solid rgba(79,195,247,0.12)", boxShadow: "4px 0 32px rgba(14,165,233,0.10)" }}>
+        <SidebarContent />
+      </aside>
+
+      {/* ── Mobile drawer (slide-in from left) ── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              key="backdrop"
+              className="fixed inset-0 z-[60] md:hidden"
+              style={{ background: "rgba(0,0,0,0.65)", backdropFilter: "blur(4px)" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22 }}
+              onClick={onMobileClose}
+            />
+
+            {/* Drawer panel */}
+            <motion.aside
+              key="drawer"
+              className="fixed left-0 top-0 h-screen w-72 flex flex-col z-[70] md:hidden"
+              style={{ background: "rgba(8,12,32,0.97)", backdropFilter: "blur(24px)", borderRight: "1px solid rgba(79,195,247,0.18)", boxShadow: "8px 0 40px rgba(14,165,233,0.15)" }}
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", stiffness: 320, damping: 32 }}
+            >
+              {/* Close button */}
+              <button
+                onClick={onMobileClose}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center z-10"
+                style={{ background: "rgba(255,79,163,0.12)", border: "1px solid rgba(255,79,163,0.25)" }}
+              >
+                <X className="w-4 h-4 text-pink-400" />
+              </button>
+
+              <SidebarContent onNavClick={onMobileClose} />
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </>
   );
 }

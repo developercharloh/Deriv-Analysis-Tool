@@ -31,7 +31,11 @@ const TICKER_ITEMS = [
 ];
 const TICKER_2X = [...TICKER_ITEMS, ...TICKER_ITEMS];
 
-export function Topbar() {
+interface TopbarProps {
+  onMenuClick?: () => void;
+}
+
+export function Topbar({ onMenuClick }: TopbarProps) {
   const [location] = useLocation();
   const { fontSize, setFontSize } = useFontSize();
   const [searchFocused, setSearchFocused] = useState(false);
@@ -60,7 +64,7 @@ export function Topbar() {
       {/* ── Main bar ── */}
       <div className="h-16 flex items-center justify-between px-4 md:px-8">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" className="md:hidden text-slate-600 hover:bg-sky-50">
+          <Button variant="ghost" size="icon" className="md:hidden text-slate-600 hover:bg-sky-50" onClick={onMenuClick}>
             <Menu className="w-5 h-5" />
           </Button>
           <div>
