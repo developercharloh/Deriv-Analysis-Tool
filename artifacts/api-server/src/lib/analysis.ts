@@ -1078,10 +1078,12 @@ export function analyzeTickAndGenerateSignals(
           // Losing-side guard: every digit on the losing side (0 … barrier)
           // must be individually below 10 % — no hot losing digit allowed.
           const losingDigitsOk = losingDigitsBelowThreshold(freqs1k, "OVER", overEntry.barrier);
+          // Entry trigger: last 3 ticks must all be on the losing side (≤ barrier)
+          const entryTriggerOk = lastNTicksOnLosingSide(state.ticks, "OVER", overEntry.barrier, 3);
           const score     = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: rsi >= 50 ? 6 : 2, entropy, anomaly, drift });
           const conf      = toConf(score);
           const profitSim = simulateSignalProfitability(state.ticks, "OVER", { barrier: overEntry.barrier });
-          if (conf !== "LOW" && losingDigitsOk && profitSim.valid) {
+          if (conf !== "LOW" && losingDigitsOk && entryTriggerOk && profitSim.valid) {
             candidates.push({
               signalType: "OVER", confidence: conf, confidenceScore: Math.round(score),
               grade: grade(score), digit, price: tick.price, symbol: tick.symbol, market,
@@ -1089,7 +1091,7 @@ export function analyzeTickAndGenerateSignals(
               rsi: Math.round(rsi), adx: Math.round(adx), trend: "BULLISH",
               regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
               tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
-              explanation: `OVER ${overEntry.barrier} | Win digits: ${overEntry.winDigits.join(",")} | WinProb ${(overEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}%`,
+              explanation: `OVER ${overEntry.barrier} | Win digits: ${overEntry.winDigits.join(",")} | WinProb ${(overEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}% | Entry: 3 losing ticks confirmed`,
             });
           }
         }
@@ -1119,10 +1121,12 @@ export function analyzeTickAndGenerateSignals(
           // Losing-side guard: every digit on the losing side (barrier … 9)
           // must be individually below 10 % — no hot losing digit allowed.
           const losingDigitsOk = losingDigitsBelowThreshold(freqs1k, "UNDER", underEntry.barrier);
+          // Entry trigger: last 3 ticks must all be on the losing side (≥ barrier)
+          const entryTriggerOk = lastNTicksOnLosingSide(state.ticks, "UNDER", underEntry.barrier, 3);
           const score     = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: rsi <= 50 ? 6 : 2, entropy, anomaly, drift });
           const conf      = toConf(score);
           const profitSim = simulateSignalProfitability(state.ticks, "UNDER", { barrier: underEntry.barrier });
-          if (conf !== "LOW" && losingDigitsOk && profitSim.valid) {
+          if (conf !== "LOW" && losingDigitsOk && entryTriggerOk && profitSim.valid) {
             candidates.push({
               signalType: "UNDER", confidence: conf, confidenceScore: Math.round(score),
               grade: grade(score), digit, price: tick.price, symbol: tick.symbol, market,
@@ -1130,7 +1134,7 @@ export function analyzeTickAndGenerateSignals(
               rsi: Math.round(rsi), adx: Math.round(adx), trend: "BEARISH",
               regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
               tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
-              explanation: `UNDER ${underEntry.barrier} | Win digits: ${underEntry.winDigits.join(",")} | WinProb ${(underEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}%`,
+              explanation: `UNDER ${underEntry.barrier} | Win digits: ${underEntry.winDigits.join(",")} | WinProb ${(underEntry.winProb * 100).toFixed(1)}% | ${wins}/4 windows | Sim WR ${(profitSim.winRate * 100).toFixed(1)}% | Entry: 3 losing ticks confirmed`,
             });
           }
         }
