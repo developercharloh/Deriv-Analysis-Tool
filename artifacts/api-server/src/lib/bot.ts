@@ -1,9 +1,9 @@
 import { db } from "@workspace/db";
 import { botSettingsTable, signalsTable, subscribersTable } from "@workspace/db/schema";
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, isNotNull, or } from "drizzle-orm";
 import { logger } from "./logger.js";
 import { derivClient, getMarketName, type DerivTick } from "./deriv.js";
-import { analyzeTickAndGenerateSignals, type SignalType, type Confidence, type GeneratedSignal } from "./analysis.js";
+import { analyzeTickAndGenerateSignals, isOverUnderConditionStillValid, type SignalType, type Confidence, type GeneratedSignal } from "./analysis.js";
 import { sendTelegramMessage, formatSignalMessage, formatWarningMessage } from "./telegram.js";
 import { startSimulator, registerSimulatorHandler, unregisterSimulatorHandler } from "./simulator.js";
 import { initScheduler, startScheduler, startSubscriberExpiryCheck } from "./scheduler.js";
@@ -406,6 +406,7 @@ export async function startBot(): Promise<void> {
 
   await startScheduler();
   startSubscriberExpiryCheck();
+  startOverUnderInvalidator();
 }
 
 export async function getSettings() {
