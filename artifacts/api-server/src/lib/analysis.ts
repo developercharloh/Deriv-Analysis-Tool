@@ -504,14 +504,25 @@ function checkLeastAppearingPosition(
   }
 }
 
-// ─── COMPULSORY CONDITION 3: NO TIED FREQUENCIES ─────────────────────────────
-// All 10 digit frequencies must be distinct (no two digits share the same
-// percentage, to 1 decimal place).  Ties indicate a flat / random market
-// where there is no reliable skew — no signal should be generated in this state.
+// ─── COMPULSORY CONDITION 3: NO TIED FREQUENCIES ON LOSING SIDE ──────────────
+// Losing-side digits must all have DISTINCT frequencies (no two share the same
+// percentage, to 1 decimal place).  When losing digits compete at the same level
+// there is no clear suppression on that side — the signal is blocked.
+// Winning-side ties are irrelevant and are ignored.
+//
+//   OVER  barrier b → losing digits are 0 … b
+//   UNDER barrier b → losing digits are b … 9
 function checkNoTiedFrequencies(
-  freqs: number[], // 10-element pct array (values rounded to 1 dp, sum ≈ 100)
+  freqs: number[],              // 10-element pct array (values 0–100, sum ≈ 100)
+  type: "OVER" | "UNDER",
+  barrier: number,
 ): boolean {
-  const rounded = freqs.map(f => Math.round(f * 10)); // compare at 0.1% precision
+  const losingDigits =
+    type === "OVER"
+      ? Array.from({ length: barrier + 1 }, (_, i) => i)          // 0 … barrier
+      : Array.from({ length: 10 - barrier }, (_, i) => barrier + i); // barrier … 9
+
+  const rounded = losingDigits.map(d => Math.round(freqs[d] * 10)); // 0.1% precision
   const seen = new Set<number>();
   for (const v of rounded) {
     if (seen.has(v)) return false;
@@ -531,7 +542,7 @@ function losingDigitsBelowThreshold(
   freqs: number[],        // 10-element pct array (values 0–100, sum ≈ 100)
   type: "OVER" | "UNDER",
   barrier: number,
-  threshold = 10.0,
+  threshold = 10.2,
 ): boolean {
   const losing =
     type === "OVER"
@@ -1039,9 +1050,9 @@ export function analyzeTickAndGenerateSignals(
       // ── COMPULSORY CONDITION 2: least-appearing digit positioning ──────────
       // Red bar (rank-10) must also be ≥ barrier+2 (well inside winning side).
       const leastPosOk = checkLeastAppearingPosition(freqs1k, "OVER", overEntry.barrier);
-      // ── COMPULSORY CONDITION 3: no tied digit frequencies ──────────────────
-      // Market must have a distinct distribution — no two digits share the same %.
-      const noTiesOk   = checkNoTiedFrequencies(freqs1k);
+      // ── COMPULSORY CONDITION 3: no tied frequencies on LOSING side ─────────
+      // Losing-side digits (0…barrier) must all have distinct percentages.
+      const noTiesOk   = checkNoTiedFrequencies(freqs1k, "OVER", overEntry.barrier);
 
       if (dominantOk && leastPosOk && noTiesOk) {
         const wins    = windowConfluence(state.ticks, "OVER");
@@ -1080,9 +1091,9 @@ export function analyzeTickAndGenerateSignals(
       // ── COMPULSORY CONDITION 2: least-appearing digit positioning ──────────
       // Red bar (rank-10) must also be ≤ barrier-2 (well inside winning side).
       const leastPosOk = checkLeastAppearingPosition(freqs1k, "UNDER", underEntry.barrier);
-      // ── COMPULSORY CONDITION 3: no tied digit frequencies ──────────────────
-      // Market must have a distinct distribution — no two digits share the same %.
-      const noTiesOk   = checkNoTiedFrequencies(freqs1k);
+      // ── COMPULSORY CONDITION 3: no tied frequencies on LOSING side ─────────
+      // Losing-side digits (barrier…9) must all have distinct percentages.
+      const noTiesOk   = checkNoTiedFrequencies(freqs1k, "UNDER", underEntry.barrier);
 
       if (dominantOk && leastPosOk && noTiesOk) {
         const wins    = windowConfluence(state.ticks, "UNDER");
@@ -1465,8 +1476,9 @@ export function getMarketAnalysisSnapshot(): MarketAnalysisSnapshot[] {
       const leastPosOkOver  = overBarrier  ? checkLeastAppearingPosition(freqs1k, "OVER",  overBarrier.barrier)  : false;
       const leastPosOkUnder = underBarrier ? checkLeastAppearingPosition(freqs1k, "UNDER", underBarrier.barrier) : false;
 
-      // No tied frequencies guard (all 10 digit %s must be distinct)
-      const noTiesOk = checkNoTiedFrequencies(freqs1k);
+      // No tied frequencies guard — losing-side digits must be distinct per barrier
+      const noTiesOkOver  = overBarrier  ? checkNoTiedFrequencies(freqs1k, "OVER",  overBarrier.barrier)  : false;
+      const noTiesOkUnder = underBarrier ? checkNoTiedFrequencies(freqs1k, "UNDER", underBarrier.barrier) : false;
 
       // Cooldown helper
       const cdSecs = (type: SignalType): number => {
