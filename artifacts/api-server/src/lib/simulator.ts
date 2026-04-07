@@ -26,16 +26,6 @@ const SYMBOL_CONFIG: Record<string, { price: number; volatility: number }> = {
   JD50:      { price: 5234.78,  volatility: 0.50 },
   JD75:      { price: 3145.92,  volatility: 0.75 },
   JD100:     { price: 1987.63,  volatility: 1.00 },
-  // Boom Indices (periodic large upward spikes)
-  BOOM300:   { price: 7234.56,  volatility: 0.35 },
-  BOOM500:   { price: 8912.34,  volatility: 0.30 },
-  BOOM1000:  { price: 5678.90,  volatility: 0.25 },
-  // Crash Indices (periodic large downward spikes)
-  CRASH300:  { price: 6543.21,  volatility: 0.35 },
-  CRASH500:  { price: 4321.09,  volatility: 0.30 },
-  CRASH1000: { price: 3456.78,  volatility: 0.25 },
-  // Step Index (Flat — very small constant steps)
-  stpRNG:    { price: 100.00,   volatility: 0.01 },
 };
 
 const lastPrices: Map<string, number> = new Map(

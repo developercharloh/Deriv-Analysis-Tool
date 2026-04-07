@@ -30,28 +30,6 @@ const MARKET_GROUPS = [
       { symbol: "JD100", label: "Jump 100 Index", short: "Jump 100" },
     ],
   },
-  {
-    group: "Boom Indices",
-    markets: [
-      { symbol: "BOOM300",  label: "Boom 300 Index",  short: "Boom 300"  },
-      { symbol: "BOOM500",  label: "Boom 500 Index",  short: "Boom 500"  },
-      { symbol: "BOOM1000", label: "Boom 1000 Index", short: "Boom 1000" },
-    ],
-  },
-  {
-    group: "Crash Indices",
-    markets: [
-      { symbol: "CRASH300",  label: "Crash 300 Index",  short: "Crash 300"  },
-      { symbol: "CRASH500",  label: "Crash 500 Index",  short: "Crash 500"  },
-      { symbol: "CRASH1000", label: "Crash 1000 Index", short: "Crash 1000" },
-    ],
-  },
-  {
-    group: "Step Index",
-    markets: [
-      { symbol: "stpRNG", label: "Step Index", short: "Step" },
-    ],
-  },
 ] as const;
 
 // Flat list used for indexing
