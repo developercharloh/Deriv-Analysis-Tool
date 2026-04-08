@@ -779,14 +779,14 @@ function simulateSignalProfitability(
     case "DIFFERS": {
       // Win = consecutive ticks produce different digits. Check last 99 pairs.
       if (sample.length < 11)
-        return { valid: false, winRate: 0, sampleSize: 0, threshold: 0.87 };
+        return { valid: false, winRate: 0, sampleSize: 0, threshold: 0.90 };
       let differs = 0;
       for (let i = 1; i < sample.length; i++) {
         if (getD(sample[i]) !== getD(sample[i - 1])) differs++;
       }
       const pairs = sample.length - 1;
       const wr    = differs / pairs;
-      return { valid: wr >= 0.87, winRate: wr, sampleSize: pairs, threshold: 0.87 };
+      return { valid: wr >= 0.90, winRate: wr, sampleSize: pairs, threshold: 0.90 };
     }
     case "RISE": {
       // Win = next tick price is strictly higher than previous tick price.
@@ -1239,9 +1239,9 @@ export function analyzeTickAndGenerateSignals(
     // DIFFERS: ensemble strongly says next digit won't repeat current
     if (
       md.dominant === "DIFFERS" &&
-      md.modelsForDiffers >= 2 &&
-      md.differsProb >= 0.82 &&
-      md.ensembleScore >= 60 &&
+      md.modelsForDiffers >= 3 &&
+      md.differsProb >= 0.95 &&
+      md.ensembleScore >= 65 &&
       !onCooldown(state, "DIFFERS", now, 300000)
     ) {
       const conf = toConf(md.ensembleScore);
@@ -1266,7 +1266,7 @@ export function analyzeTickAndGenerateSignals(
     if (
       md.dominant === "MATCHES" &&
       md.modelsForMatches >= 3 &&
-      md.matchesProb >= 0.22 &&
+      md.matchesProb >= 0.28 &&
       md.ensembleScore >= 60 &&
       !onCooldown(state, "MATCHES", now, 300000)
     ) {
