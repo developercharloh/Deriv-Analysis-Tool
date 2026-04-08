@@ -26,7 +26,7 @@ function getNextHourGMT3(): string {
 }
 
 
-export function formatSignalMessage(signal: GeneratedSignal, validityMinutes = 10, marketBot?: string): string {
+export function formatSignalMessage(signal: GeneratedSignal, validityMinutes = 5, marketBot?: string): string {
   const type = signal.signalType;
   const nextSignal = getNextHourGMT3();
   const expiresAt = new Date(Date.now() + validityMinutes * 60000).toTimeString().slice(0, 5) + " UTC";

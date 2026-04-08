@@ -77,7 +77,7 @@ async function sendToActiveSubscribers(
   }
 }
 
-const REALTIME_VALIDITY_MINUTES = 10;
+const REALTIME_VALIDITY_MINUTES = 5;
 
 async function dispatchSignalNow(signal: GeneratedSignal, dbId: number): Promise<void> {
   try {

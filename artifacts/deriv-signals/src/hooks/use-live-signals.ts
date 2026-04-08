@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { type Signal } from '@workspace/api-client-react';
 
-const VALIDITY_SECONDS = 600; // 10-minute default validity window
+const VALIDITY_SECONDS = 300; // 5-minute default validity window
 
 function isExpired(signal: Signal): boolean {
   // Prefer the server-set expiresAt; fall back to createdAt + 600 s

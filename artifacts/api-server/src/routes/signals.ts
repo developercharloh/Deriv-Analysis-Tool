@@ -32,8 +32,8 @@ function candidateScore(s: { matchesProb?: number; ensembleScore?: number }): nu
 }
 
 function predictedValidity(score: number): number {
-  if (score >= 80) return 10;
-  if (score >= 65) return 8;
+  if (score >= 80) return 5;
+  if (score >= 65) return 5;
   if (score >= 50) return 5;
   return 3;
 }
@@ -110,7 +110,7 @@ export async function dispatchBestSignalIfReady(force = false): Promise<Dispatch
       };
     }
 
-    const validityMinutes = 10; // analysis-approved HIGH signals warrant full validity
+    const validityMinutes = 5; // analysis-approved HIGH signals warrant full validity
     const targets = [settings.telegramChatId, settings.telegramGroupChatId].filter(Boolean) as string[];
     const bufferMsg = formatSignalMessage(signal, validityMinutes);
     let sent = 0;
