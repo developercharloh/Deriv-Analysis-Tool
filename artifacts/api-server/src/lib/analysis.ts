@@ -963,15 +963,27 @@ function mdEnsemble(ticks: DerivTick[], state: SymbolState): MDResult {
     : modelsForDiffers * 5;
   const ensembleScore = Math.min(100, Math.max(0, extremeness * 55 + agreeBonus + 20));
 
-  // ── Best entry digit for MATCHES ────────────────────────────────────────
-  // Score every digit 0–9 using three signals:
-  //   1. Markov forward probability: P(currentDigit → d)  — strongest predictor
-  //   2. Frequency in last 50 ticks                       — recent regime
-  //   3. Frequency in last 200 ticks                      — long-term baseline
-  // The digit with the highest combined score is the most statistically
-  // likely to appear on the next tick — ideal MATCHES entry.
-  const freqs50  = digitFreqs(ticks, Math.min(50, n));
-  const freqs200 = digitFreqs(ticks, Math.min(200, n));
+  // ── Best entry digit for MATCHES — Option 1: Overdue-Elevated ──────────
+  // Picks a digit that is genuinely hot long-term but has been resting
+  // recently, making it statistically "due" to fire again.
+  //
+  //   Score = long-term frequency (1k ticks) × √(ticks since last appearance + 1)
+  //
+  // A digit scoring highest here:
+  //   • appears above baseline historically  (elevated long-term rate)
+  //   • hasn't appeared in the last N ticks  (currently resting / overdue)
+  // This avoids picking a digit that is actively dominating right now and
+  // may be in a cool-down pause before it fires again.
+  const freqs50   = digitFreqs(ticks, Math.min(50, n));
+  const freqs200  = digitFreqs(ticks, Math.min(200, n));
+  const freqs1kMd = digitFreqs(ticks, Math.min(1000, n));
+
+  // Calculate ticks since each digit last appeared
+  const ticksSinceLast: number[] = Array(10).fill(n);
+  for (let i = ticks.length - 1; i >= Math.max(0, ticks.length - n); i--) {
+    const d = ticks[i].lastDigit ?? (Math.round(ticks[i].price * 10) % 10);
+    if (ticksSinceLast[d] === n) ticksSinceLast[d] = ticks.length - 1 - i;
+  }
 
   let matchesEntry = currentDigit;
   let matchesEntryScore = -1;
@@ -981,15 +993,18 @@ function mdEnsemble(ticks: DerivTick[], state: SymbolState): MDResult {
   let differsEntryScore = 999;
 
   for (let d = 0; d <= 9; d++) {
-    const markovFwd  = state.markovMatrix[currentDigit]?.[d] ?? 0.10;
-    const freq50Norm = (freqs50[d]  ?? 10) / 100;
+    // MATCHES: Overdue-Elevated scoring
+    const ltFreq    = (freqs1kMd[d] ?? 10) / 100;          // historical rate
+    const gap       = ticksSinceLast[d];                     // ticks since last seen
+    const matchScore = ltFreq * Math.sqrt(gap + 1);          // overdue-elevated score
+    if (matchScore > matchesEntryScore) { matchesEntryScore = matchScore; matchesEntry = d; }
+
+    // DIFFERS: keep Markov + recency approach (pick least-likely digit to avoid)
+    const markovFwd   = state.markovMatrix[currentDigit]?.[d] ?? 0.10;
+    const freq50Norm  = (freqs50[d]  ?? 10) / 100;
     const freq200Norm = (freqs200[d] ?? 10) / 100;
-
-    // Weighted score: Markov transition dominates, recency confirms
-    const score = (markovFwd * 0.55) + (freq50Norm * 0.30) + (freq200Norm * 0.15);
-
-    if (score > matchesEntryScore) { matchesEntryScore = score; matchesEntry = d; }
-    if (score < differsEntryScore) { differsEntryScore = score; differsEntry = d; }
+    const diffScore   = (markovFwd * 0.55) + (freq50Norm * 0.30) + (freq200Norm * 0.15);
+    if (diffScore < differsEntryScore) { differsEntryScore = diffScore; differsEntry = d; }
   }
 
   return {
