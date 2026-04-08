@@ -124,17 +124,17 @@ async function fireHourlySignals(intervalMinutes: number): Promise<void> {
       return;
     }
 
-    // Send exactly ONE signal per cycle to avoid flooding the channel.
-    const [best] = signals.slice(0, 1);
-    const msg = formatHourlySignalBatch([best])[0];
-    await sendToAll(settings.telegramBotToken, settings.telegramChatId, settings.telegramGroupChatId, msg);
-    // Forward the same signal to all active paid subscribers
-    broadcastToSubscribers(settings.telegramBotToken, msg, false).catch((err) =>
-      logger.error({ err }, "Subscriber broadcast error (scheduled signal)"),
-    );
+    // Send all collected signals (up to 4) so subscribers receive every valid signal.
+    const messages = formatHourlySignalBatch(signals);
+    for (const msg of messages) {
+      await sendToAll(settings.telegramBotToken, settings.telegramChatId, settings.telegramGroupChatId, msg);
+      broadcastToSubscribers(settings.telegramBotToken, msg, false).catch((err) =>
+        logger.error({ err }, "Subscriber broadcast error (scheduled signal)"),
+      );
+    }
     // Update the shared dispatch tracker so real-time won't fire again this cycle.
     notifyDispatchFn(Date.now());
-    logger.info({ symbol: best.symbol, type: best.signalType }, "Scheduled signal sent (1 per cycle)");
+    logger.info({ count: signals.length, types: signals.map(s => s.signalType) }, "Scheduled signals sent");
   } catch (err) {
     logger.error({ err }, "Error firing scheduled signals");
   }
