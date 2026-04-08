@@ -1239,8 +1239,8 @@ export function analyzeTickAndGenerateSignals(
     // DIFFERS: ensemble strongly says next digit won't repeat current
     if (
       md.dominant === "DIFFERS" &&
-      md.modelsForDiffers >= 3 &&
-      md.differsProb >= 0.95 &&
+      md.modelsForDiffers >= 8 &&
+      md.differsProb >= 0.99 &&
       md.ensembleScore >= 65 &&
       !onCooldown(state, "DIFFERS", now, 300000)
     ) {
