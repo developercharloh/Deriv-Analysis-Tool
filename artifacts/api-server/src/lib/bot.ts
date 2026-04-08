@@ -238,7 +238,13 @@ function collectHighSignals(): GeneratedSignal[] {
   const others = undispatched.filter(s => s.signalType !== "EVEN" && s.signalType !== "ODD");
   const deduped = bestEvenOdd ? [...others, bestEvenOdd] : others;
 
-  return deduped.slice(0, 10);
+  // Sort by confidence descending so the best 4 are always selected
+  const sorted = deduped.sort((a, b) => {
+    const rankDiff = confRank(b.confidence) - confRank(a.confidence);
+    return rankDiff !== 0 ? rankDiff : (b.confidenceScore ?? 0) - (a.confidenceScore ?? 0);
+  });
+
+  return sorted.slice(0, 4);
 }
 
 /** Read-only view of buffered HIGH signals not yet dispatched — does not clear the buffer. */
