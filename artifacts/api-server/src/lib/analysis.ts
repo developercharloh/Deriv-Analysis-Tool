@@ -596,20 +596,17 @@ function checkEvenOddStrength(
     .sort((a, b) => freqs1k[b] - freqs1k[a]);
 
   const mostAppearing  = ranked[0]; // green bar
-  const secondMost     = ranked[1]; // blue bar
-  const leastAppearing = ranked[9]; // red bar
+  const secondMost     = ranked[1]; // blue/yellow bar
 
-  // 1. Green bar must be on signal side AND > 11.5 %
-  if (!sideDigits.includes(mostAppearing) || freqs1k[mostAppearing] <= 11.5) return false;
+  // 1. EITHER the green bar OR the blue/yellow bar must be on the signal side
+  //    and whichever one qualifies must appear > 11.5 %
+  const greenOnSide  = sideDigits.includes(mostAppearing) && freqs1k[mostAppearing] > 11.5;
+  const blueOnSide   = sideDigits.includes(secondMost)    && freqs1k[secondMost]    > 11.5;
+  if (!greenOnSide && !blueOnSide) return false;
 
-  // 2. Blue bar (2nd most) must be on signal side (no % requirement)
-  if (!sideDigits.includes(secondMost)) return false;
-
-  // 3. Red bar (least appearing) must be on signal side (no % requirement)
-  if (!sideDigits.includes(leastAppearing)) return false;
-
-  // 4. At least 3 OTHER signal-side digits (excl. green bar) each > 10 %
-  const othersAbove = sideDigits.filter(d => d !== mostAppearing && freqs1k[d] > 10);
+  // 2. At least 3 OTHER signal-side digits (excl. the qualifying top bar) each > 10 %
+  const topBar      = greenOnSide ? mostAppearing : secondMost;
+  const othersAbove = sideDigits.filter(d => d !== topBar && freqs1k[d] > 10);
   if (othersAbove.length < 3) return false;
 
   return true;
@@ -1210,14 +1207,12 @@ export function analyzeTickAndGenerateSignals(
       if (wins >= 2) {
         // 4-condition strength guard evaluated on last 1 000 ticks
         const strengthOk = checkEvenOddStrength(freqs1k, bias);
-        // Entry trigger: last 2 ticks must be from the opposite side
-        const recencyOk  = checkEvenOddRecency(state.ticks, bias);
         const score = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: 5, entropy, anomaly, drift });
         const conf = toConf(score);
         const sideDigits = bias === "EVEN" ? [0, 2, 4, 6, 8] : [1, 3, 5, 7, 9];
         const entryDgt = sideDigits.reduce((best, d) => freqs1k[d] > freqs1k[best] ? d : best, sideDigits[0]);
         const profitSim = simulateSignalProfitability(state.ticks, bias);
-        if (conf !== "LOW" && strengthOk && recencyOk && profitSim.valid) {
+        if (conf !== "LOW" && strengthOk && profitSim.valid) {
           candidates.push({
             signalType: bias,
             confidence: conf,
