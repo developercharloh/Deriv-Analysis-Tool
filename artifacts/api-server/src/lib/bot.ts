@@ -222,7 +222,23 @@ function collectHighSignals(): GeneratedSignal[] {
   );
   recentHighSignals.length = 0;
   realTimeDispatchedKeys.clear();
-  return undispatched.slice(0, 10);
+
+  // De-duplicate EVEN/ODD: multiple markets may pass simultaneously.
+  // Keep only the single highest-confidence EVEN/ODD signal so the
+  // Live Feed never gets flooded with the same signal type from many markets.
+  const confRank = (c: Confidence) => c === "HIGH" ? 2 : c === "MEDIUM" ? 1 : 0;
+  const evenOddCandidates = undispatched
+    .filter(s => s.signalType === "EVEN" || s.signalType === "ODD")
+    .sort((a, b) => {
+      const rankDiff = confRank(b.confidence) - confRank(a.confidence);
+      return rankDiff !== 0 ? rankDiff : (b.confidenceScore ?? 0) - (a.confidenceScore ?? 0);
+    });
+  const bestEvenOdd = evenOddCandidates[0]; // top-1 only, or undefined if none
+
+  const others = undispatched.filter(s => s.signalType !== "EVEN" && s.signalType !== "ODD");
+  const deduped = bestEvenOdd ? [...others, bestEvenOdd] : others;
+
+  return deduped.slice(0, 10);
 }
 
 /** Read-only view of buffered HIGH signals not yet dispatched — does not clear the buffer. */

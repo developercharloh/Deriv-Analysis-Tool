@@ -1191,23 +1191,26 @@ export function analyzeTickAndGenerateSignals(
   }
 
   // ─── EVEN / ODD ──────────────────────────────────────────────────────────
-  // Fires when even or odd digits dominate the last 100 ticks (≥ 58%),
+  // Fires when even or odd digits dominate the last 1 000 ticks (≥ 53%),
   // at least 2 windows agree, score passes MEDIUM threshold, AND the
   // 4-condition strength guard (1 000-tick based) passes.
+  // Using 1 000 ticks (not 100) gives a stable long-term pattern rather than
+  // a fleeting short-term blip.  Multiple markets may pass simultaneously so
+  // bot.ts de-duplicates to send only the single highest-confidence EVEN/ODD
+  // signal at any given moment.
   if (state.ticks.length >= 1000 && entropyOk && !anomaly && !drift) {
-    const freqs100 = digitFreqs(state.ticks, 100);
     const freqs1k  = digitFreqs(state.ticks, 1000);
-    const evenPct = [0, 2, 4, 6, 8].reduce((s, i) => s + freqs100[i], 0);
-    const oddPct  = [1, 3, 5, 7, 9].reduce((s, i) => s + freqs100[i], 0);
+    const evenPct = [0, 2, 4, 6, 8].reduce((s, i) => s + freqs1k[i], 0);
+    const oddPct  = [1, 3, 5, 7, 9].reduce((s, i) => s + freqs1k[i], 0);
     const bias    = evenPct > oddPct ? "EVEN" : "ODD";
     const winProb = Math.max(evenPct, oddPct) / 100;
 
-    if (winProb >= 0.58 && !onCooldown(state, bias, now, 300000)) {
+    if (winProb >= 0.53 && !onCooldown(state, bias, now, 300000)) {
       const wins = windowConfluence(state.ticks, bias);
       if (wins >= 2) {
         // 4-condition strength guard evaluated on last 1 000 ticks
         const strengthOk = checkEvenOddStrength(freqs1k, bias);
-        // Recency confirmation: pattern must still be active in the last 25 / 10 ticks
+        // Entry trigger: last 2 ticks must be from the opposite side
         const recencyOk  = checkEvenOddRecency(state.ticks, bias);
         const score = calcScore({ adx, adxMin, windows: wins, agreement: ensemble.agreement, rsiBonus: 5, entropy, anomaly, drift });
         const conf = toConf(score);
@@ -1226,7 +1229,7 @@ export function analyzeTickAndGenerateSignals(
             rsi: Math.round(rsi), adx: Math.round(adx),
             regime, volatilityRegime: volRegime, modelAgreement: ensemble.agreement,
             tickWindowsAligned: wins, entropy: parseFloat(entropy.toFixed(3)), hasAnomaly: anomaly,
-            explanation: `${bias} | ${(winProb * 100).toFixed(1)}% 100-tick bias | ${wins}/4 windows | Strength + Recency guards passed | Sim WR ${(profitSim.winRate * 100).toFixed(1)}% | Entry digit ${entryDgt}`,
+            explanation: `${bias} | ${(winProb * 100).toFixed(1)}% 1k-tick bias | ${wins}/4 windows | Strength + Recency guards passed | Sim WR ${(profitSim.winRate * 100).toFixed(1)}% | Entry digit ${entryDgt}`,
           });
         }
       }
